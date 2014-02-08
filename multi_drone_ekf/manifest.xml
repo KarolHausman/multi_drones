@@ -1,0 +1,24 @@
+<package>
+  <description brief="multi_drone_ekf">
+
+     multi_drone_ekf
+
+  </description>
+  <author>Karol Hausman</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multi_drone_ekf</url>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="visualization_msgs"/>
+  <depend package="ar_recog"/>
+  <depend package="joy" />
+
+  <depend package="common_rosdeps" />
+  <rosdep name="eigen" />
+
+</package>
+
+
