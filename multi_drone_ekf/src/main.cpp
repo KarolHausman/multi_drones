@@ -1,15 +1,14 @@
 /*
- * Visual Navigation for Flying Robots:
  *
- * Sheet 2
- *
- *  Created on: May 1, 2012
- *      Author: Nikolas Engelhard
+ *  Created on: Feb 6, 2014
+ *      Author: Karol Hausman
  */
 
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
 #include <tf/transform_broadcaster.h>
+#include "multi_drone_ekf/EKF.h"
+
 
 #include "multi_drone_ekf/Navdata.h"
 #include "multi_drone_ekf/Tag.h"
@@ -98,11 +97,6 @@ struct Camera {
     }
 
 
-    void estimateCamWorldTransform()
-    {
-
-    }
-
 };
 
 struct Ardrone {
@@ -110,16 +104,12 @@ struct Ardrone {
 	ros::NodeHandle nh_;
     ros::Subscriber sub_nav_;
     ros::Subscriber sub_tags_;
-
-	// global pose of markers
-//    Eigen::Vector3f zeta_global_pose, beta_global_pose;
-//    btQuaternion zeta_rotation, beta_rotation;
+    ExtendedKalmanFilter kalman_filter_;
 
     tf::Transform tag_pose_;
 
 
 
-//	ExtendedKalmanFilter kalman_filter;
 //	EKF_marker ekf_marker; // visualization for the EKF-state and covariance
 
 //	float z;
@@ -167,6 +157,7 @@ struct Ardrone {
 
                 tag_pose_.setOrigin(translation);
                 tag_pose_.setRotation(rotation);
+
 
 
             }
@@ -302,14 +293,27 @@ int main(int argc, char **argv) {
 
         if (camera.pose_set_)
         {
+//            br.sendTransform(
+//                    tf::StampedTransform(camera.tag_pose_, ros::Time::now(),
+//                            "/camera","/zeta_marker"));
+
+
             br.sendTransform(
-                    tf::StampedTransform(camera.tag_pose_, ros::Time::now(),
-                            "/camera","/zeta_marker"));
+                    tf::StampedTransform(camera.tag_pose_, ros::Time::now(), "/zeta_marker",
+                            "/camera"));
+
+            br.sendTransform(
+                    tf::StampedTransform(drone_observer.tag_pose_*camera.tag_pose_.inverse(), ros::Time::now(), "/zeta_marker",
+                            "/beta_marker"));
+
         }
 
-        br.sendTransform(
-                tf::StampedTransform(drone_observer.tag_pose_, ros::Time::now(), "/camera",
-                        "/beta_marker"));
+//        br.sendTransform(
+//                tf::StampedTransform(drone_observer.tag_pose_, ros::Time::now(), "/camera",
+//                        "/beta_marker"));
+
+
+
 		r.sleep();
 	}
 
