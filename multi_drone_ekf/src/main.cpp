@@ -54,12 +54,12 @@ struct Camera {
                 continue;
 
 
-            trans_x_ = tag.xMetric;
-            trans_y_ = tag.yMetric;
-            trans_z_ = tag.zMetric;
-            rot_z_ = -tag.yRot;
-            rot_y_ = -tag.xRot;
-            rot_x_ = tag.zRot;
+            trans_x_ += tag.xMetric;
+            trans_y_ += tag.yMetric;
+            trans_z_ += tag.zMetric;
+            rot_z_ += -tag.yRot;
+            rot_y_ += -tag.xRot;
+            rot_x_ += tag.zRot;
 
 
 
@@ -83,15 +83,15 @@ struct Camera {
 
             counter_ ++;
 
-//            if (counter_ == avg_number_)
+            if (counter_ == avg_number_)
             {
 
-                btVector3 translation(trans_x_/*/avg_number_*/, trans_y_/*/avg_number_*/, trans_z_/*/avg_number_*/);
+                btVector3 translation(trans_x_/avg_number_, trans_y_/avg_number_, trans_z_/avg_number_);
 
 
                 btQuaternion rotation;
 
-                rotation.setEulerZYX(rot_z_/*/avg_number_*/, rot_y_/*/avg_number_*/, rot_x_/*/avg_number_*/);
+                rotation.setEulerZYX(rot_z_/avg_number_, rot_y_/avg_number_, rot_x_/avg_number_);
 
 
                 if (tag.id == marker){
