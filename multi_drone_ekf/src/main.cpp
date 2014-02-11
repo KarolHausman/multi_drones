@@ -15,7 +15,91 @@
 #include "multi_drone_ekf/Tags.h"
 #include <Eigen/Core>
 #include <boost/bind.hpp>
+struct Marker {
 
+    std::string tags_topic_;
+    tf::Transform tag_pose_;
+    ros::NodeHandle nh_;
+    ros::Subscriber sub_tags_;
+    bool updated_;
+
+
+    Marker(int marker_nr)
+    {
+        tags_topic_ = "/tags";
+        updated_ = false;
+        boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&Marker::tagCB, this, _1, marker_nr) );
+        sub_tags_ = nh_.subscribe(tags_topic_, 100,  tag_callback);
+    }
+
+
+    void tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
+
+        int tag_cnt = tag_msg->tag_count;
+
+        if (tag_cnt == 0)
+            return;
+
+        for (int i = 0; i < tag_cnt; ++i) {
+            if (marker == tag_msg->tags[i].id)
+            ROS_INFO(
+                    "Found tag  %i (cf: %.3f)", tag_msg->tags[i].id, tag_msg->tags[i].cf);
+        }
+
+        for (int i = 0; i < tag_cnt; ++i) {
+
+            multi_drone_ekf::Tag tag = tag_msg->tags[i];
+
+            if (tag.id != marker) {
+                ROS_INFO("Detected unknown Marker");
+                return;
+            }
+
+            // detection is too unsure
+            if (tag.cf < 0.5)
+                continue;
+
+
+           double trans_x_ = tag.xMetric;
+           double trans_y_ = tag.yMetric;
+           double trans_z_ = tag.zMetric;
+           double rot_z_ = -tag.yRot;
+           double rot_y_ = -tag.xRot;
+           double rot_x_ = tag.zRot;
+
+
+
+            btVector3 trans_around_y(0,0,0);
+
+            btQuaternion rot_around_y;
+            rot_around_y.setEulerZYX(0,-M_PI/2,0);
+
+            tf::Transform pose_around_y;
+
+
+            pose_around_y.setOrigin(trans_around_y);
+            pose_around_y.setRotation(rot_around_y);
+
+            btVector3 translation(trans_x_,trans_y_,trans_z_);
+            btQuaternion rotation;
+            rotation.setEulerZYX(rot_z_, rot_y_,rot_x_);
+
+
+            if (tag.id==marker){
+
+
+                tag_pose_.setOrigin(translation);
+                tag_pose_.setRotation(rotation);
+                tag_pose_ = tag_pose_*pose_around_y;
+
+            }
+        }
+        updated_ =true;
+    }
+
+
+
+};
 
 
 struct Camera {
