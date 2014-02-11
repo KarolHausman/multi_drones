@@ -50,6 +50,7 @@ struct Camera {
 //			}
 
             // detection is too unsure
+
             if (tag.cf < 0.5)
                 continue;
 
