@@ -16,6 +16,8 @@
 #include <Eigen/Core>
 #include <boost/bind.hpp>
 
+
+
 struct Camera {
 
     ros::NodeHandle nh_;
@@ -129,6 +131,10 @@ struct Ardrone {
 
     tf::Transform tag_pose_;
 
+    tf::Transform odom_pose_;
+    double prevTime_;
+
+
 
 
 //	EKF_marker ekf_marker; // visualization for the EKF-state and covariance
@@ -218,6 +224,72 @@ struct Ardrone {
             }
         }
     }
+
+
+
+    void navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
+        double dt;
+
+        ROS_INFO_STREAM(
+                "------------------------------------------ \n"
+                << "Nav_msg vx: " << nav_msg->vx
+                << "\nNav_msg vy: " << nav_msg->vy
+                << "\nNav_msg vz: " << nav_msg->vz
+                << "\nNav_msg yaw: " << nav_msg->rotZ
+                << "\nNav_msg height: " << nav_msg->altd);
+
+        if (prevTime_ == 0) {
+            prevTime_ = nav_msg->header.stamp.toSec();
+            dt = (double) 1 / 14;
+        } else {
+            dt = (nav_msg->header.stamp.toSec() - prevTime_);
+            prevTime_ = nav_msg->header.stamp.toSec();
+        }
+
+        //Calculate changes of translation (incremental translation values)
+        double distX = nav_msg->vx * dt / 1000.0;
+        double distY = nav_msg->vy * dt / 1000.0;
+        double distZ = (double) (nav_msg->altd) / 1000.0; //altd value in millimeter
+
+        //Get absolute rotation values
+        double yaw = ((nav_msg->rotZ) / (180.0 / M_PI));
+        double pitch = ((nav_msg->rotY) / (180.0 / M_PI));
+        double roll = ((nav_msg->rotX) / (180.0 / M_PI));
+
+
+
+
+        btQuaternion newRotation;
+        newRotation.setEulerZYX(yaw, pitch, roll);
+        odom_pose_.setRotation(newRotation);
+
+        //Transform(rotate) local translation vector to global translation
+        btVector3 translation;
+        translation.setX(distX);
+        translation.setY(distY);
+        translation.setZ(0);
+
+        btMatrix3x3 rotationMatrix;
+        rotationMatrix.setEulerYPR(yaw, pitch, roll);
+        translation = rotationMatrix * translation;
+        translation.setZ(distZ-odom_pose_.getOrigin().getZ());
+
+        //Integrate/Sum translation values
+        btVector3 newOrigin(odom_pose_.getOrigin().getX() + translation.getX(), odom_pose_.getOrigin().getY() + translation.getY(), odom_pose_.getOrigin().getZ() + translation.getZ()); //holds integrated state
+        odom_pose_.setOrigin(newOrigin);
+
+
+        tf::TransformBroadcaster br;
+        br.sendTransform(
+        tf::StampedTransform(odom_pose_, nav_msg->header.stamp,
+                "/zeta_marker", "/ardrone"));
+
+}
+
+
+
+
+
 //            else if (tag.id==1)
 //            {
 //                beta_tag_pose.setOrigin(translation);
@@ -295,11 +367,12 @@ struct Ardrone {
 
         boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&Ardrone::tagCB, this, _1, marker_nr) );
         sub_tags_ = nh_.subscribe("/tags", 100,  tag_callback);
+        prevTime_ = 0;
 
 
 //        sub_tags = nh_.subscribe("/tags", 100, &Ardrone::tagCB, this);
-//		sub_nav = nh_.subscribe("/ardrone/navdata", 100,
-//				&Ardrone_localizer::navCB, this);
+        sub_nav_ = nh_.subscribe("/ardrone/navdata", 100,
+                &Ardrone::navCB, this);
 	}
 
 };
@@ -360,6 +433,8 @@ int main(int argc, char **argv) {
             br.sendTransform(
                     tf::StampedTransform(camera.tag_pose_.inverse()*drone_observer.tag_pose_, ros::Time::now(), "/zeta_marker",
                             "/beta_marker"));
+
+
 
         }
 
