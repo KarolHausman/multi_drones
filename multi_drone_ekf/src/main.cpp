@@ -214,7 +214,9 @@ struct Ardrone {
     ExtendedKalmanFilter kalman_filter_;
 
     tf::Transform tag_pose_;
+    tf::Transform drone_in_marker_coord_;
 
+    bool tag_seen_first_time_;
     tf::Transform odom_pose_;
     double prevTime_;
 
@@ -246,29 +248,17 @@ struct Ardrone {
 
             multi_drone_ekf::Tag tag = tag_msg->tags[i];
 
-//			if (tag.id != 1 && tag.id != 12) {
-//				ROS_INFO("Detected unknown Marker");
-//				return;
-//			}
+            if (tag.id != marker) {
+                ROS_INFO("Detected unknown Marker");
+                return;
+            }
 
 			// detection is too unsure
 			if (tag.cf < 0.5)
 				continue;
 
 
-//            btVector3 translation(tag.yMetric, tag.zMetric, tag.xMetric);
 
-//            btQuaternion rotation;
-
-//            rotation.setEulerZYX(tag.zRot, -tag.yRot, -tag.xRot);
-
-
-//            double trans_x_ = tag.yMetric;
-//            double trans_y_ = tag.zMetric;
-//            double trans_z_ = tag.xMetric;
-//            double rot_z_ = tag.zRot - M_PI/2;
-//            double rot_x_ = tag.yRot;
-//            double rot_y_ = -tag.xRot - M_PI;
 
 
            double trans_x_ = tag.xMetric;
@@ -302,6 +292,7 @@ struct Ardrone {
                 tag_pose_.setOrigin(translation);
                 tag_pose_.setRotation(rotation);
                 tag_pose_ = tag_pose_*pose_around_y;
+                tag_seen_first_time_ = true;
 
 
 
@@ -340,33 +331,41 @@ struct Ardrone {
         double pitch = ((nav_msg->rotY) / (180.0 / M_PI));
         double roll = ((nav_msg->rotX) / (180.0 / M_PI));
 
+        Eigen::Vector6f odometry;
+        odometry << distX, distY, distZ, yaw, pitch, roll;
+
+
+        kalman_filter_.predictionStep(odometry);
 
 
 
-        btQuaternion newRotation;
-        newRotation.setEulerZYX(yaw, pitch, roll);
-        odom_pose_.setRotation(newRotation);
 
-        //Transform(rotate) local translation vector to global translation
-        btVector3 translation;
-        translation.setX(distX);
-        translation.setY(distY);
-        translation.setZ(0);
+//        btQuaternion newRotation;
+//        newRotation.setEulerZYX(yaw, pitch, roll);
+//        odom_pose_.setRotation(newRotation);
 
-        btMatrix3x3 rotationMatrix;
-        rotationMatrix.setEulerYPR(yaw, pitch, roll);
-        translation = rotationMatrix * translation;
-        translation.setZ(distZ-odom_pose_.getOrigin().getZ());
+//        //Transform(rotate) local translation vector to global translation
+//        btVector3 translation;
+//        translation.setX(distX);
+//        translation.setY(distY);
+//        translation.setZ(0);
 
-        //Integrate/Sum translation values
-        btVector3 newOrigin(odom_pose_.getOrigin().getX() + translation.getX(), odom_pose_.getOrigin().getY() + translation.getY(), odom_pose_.getOrigin().getZ() + translation.getZ()); //holds integrated state
-        odom_pose_.setOrigin(newOrigin);
+//        btMatrix3x3 rotationMatrix;
+//        rotationMatrix.setEulerYPR(yaw, pitch, roll);
+//        translation = rotationMatrix * translation;
+//        translation.setZ(distZ-odom_pose_.getOrigin().getZ());
+
+//        //Integrate/Sum translation values
+//        btVector3 newOrigin(odom_pose_.getOrigin().getX() + translation.getX(), odom_pose_.getOrigin().getY() + translation.getY(), odom_pose_.getOrigin().getZ() + translation.getZ()); //holds integrated state
+//        odom_pose_.setOrigin(newOrigin);
 
 
-        tf::TransformBroadcaster br;
-        br.sendTransform(
-        tf::StampedTransform(odom_pose_, nav_msg->header.stamp,
-                "/zeta_marker", "/ardrone"));
+
+
+//        tf::TransformBroadcaster br;
+//        br.sendTransform(
+//        tf::StampedTransform(odom_pose_, nav_msg->header.stamp,
+//                "/zeta_marker", "/ardrone"));
 
 }
 
@@ -406,7 +405,9 @@ struct Ardrone {
 //		if (!got_first_nav) {
 //			got_first_nav = true;
 //			last_stamp = nav_msg->header.stamp;
-//			last_yaw = nav_msg->rotZ;
+//			last_yaw = nav_msg->rotZ;//            br.sendTransform(
+    //            tf::StampedTransform(drone_observer.odom_pose_, ros::Time::now()/*nav_msg->header.stamp*/,
+    //                    "/zeta_marker", "/ardrone"));
 //			return;
 //		}
 
@@ -449,9 +450,18 @@ struct Ardrone {
 //        ros::Subscriber subLeft = nh.subscribe<sensor_msgs::Image> ("/bb2/left/image_raw", 10,
 //            boost::bind(imageCallback, _1, pointerToImageManagmentStruct) );
 
+
+        btVector3 translation(0,0,-0.25);
+        btQuaternion rotation;
+        rotation.setEulerZYX(-M_PI, 0,0);
+
+        drone_in_marker_coord_.setOrigin(translation);
+        drone_in_marker_coord_.setRotation(rotation);
+
         boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&Ardrone::tagCB, this, _1, marker_nr) );
         sub_tags_ = nh_.subscribe("/tags", 100,  tag_callback);
         prevTime_ = 0;
+        tag_seen_first_time_ = false;
 
 
 //        sub_tags = nh_.subscribe("/tags", 100, &Ardrone::tagCB, this);
@@ -481,6 +491,8 @@ int main(int argc, char **argv) {
 //	tag_pose_beta.setRotation(tf::Quaternion(0, 0, 0));
 
 	tf::TransformBroadcaster br;
+
+    bool init = true;
 
 	ros::Rate r(30);
     while (drone_observer.nh_.ok()) {
@@ -517,6 +529,38 @@ int main(int argc, char **argv) {
             br.sendTransform(
                     tf::StampedTransform(camera.tag_pose_.inverse()*drone_observer.tag_pose_, ros::Time::now(), "/zeta_marker",
                             "/beta_marker"));
+
+//            br.sendTransform(
+//            tf::StampedTransform(drone_observer.drone_in_marker_coord_, ros::Time::now()/*nav_msg->header.stamp*/,
+//                    "/beta_marker", "/ardrone"));
+
+
+
+
+            if(init)
+            {
+                if(drone_observer.tag_seen_first_time_)
+                {
+                    drone_observer.tag_seen_first_time_ = false;
+                    init = false;
+                    drone_observer.odom_pose_= camera.tag_pose_.inverse()*drone_observer.tag_pose_*drone_observer.drone_in_marker_coord_*drone_observer.odom_pose_;
+
+                    drone_observer.kalman_filter_.state_pose_= camera.tag_pose_.inverse()*drone_observer.tag_pose_*drone_observer.drone_in_marker_coord_*drone_observer.kalman_filter_.state_pose_;
+                }
+            }
+
+
+
+
+
+//            br.sendTransform(
+//            tf::StampedTransform(camera.tag_pose_.inverse()*drone_observer.tag_pose_*drone_observer.drone_in_marker_coord_, ros::Time::now()/*nav_msg->header.stamp*/,
+//                    "/zeta_marker", "/ardrone"));
+
+
+            br.sendTransform(
+            tf::StampedTransform(drone_observer.kalman_filter_.state_pose_, ros::Time::now()/*nav_msg->header.stamp*/,
+                    "/zeta_marker", "/ardrone"));
 
 
 

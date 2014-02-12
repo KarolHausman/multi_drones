@@ -11,6 +11,9 @@
 #include <ros/ros.h>
 #include <Eigen/Core>
 #include <Eigen/LU> // for Matrix-Inversion
+#include <tf/transform_broadcaster.h>
+
+
 
 namespace Eigen
 {
@@ -25,6 +28,7 @@ struct ExtendedKalmanFilter {
 
  Eigen::Matrix6f Q_; // process noise
  Eigen::Matrix6f R_; // observation noise
+ tf::Transform state_pose_;
 
  void predictionStep(const Eigen::Vector6f& odometry); // x_{t+1} = g(x_t,u) and update uncertainty
  void correctionStep(const Eigen::Vector6f& measurement);  // compare expected and measured values, update state and uncertainty
