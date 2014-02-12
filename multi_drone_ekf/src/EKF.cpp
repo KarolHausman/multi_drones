@@ -60,11 +60,46 @@ void ExtendedKalmanFilter::predictionStep(const Eigen::Vector6f& odometry) {
 
 //	// dg/dx:
     Eigen::Matrix6f G;
+    double a = state_(1);
+    double b = state_(2);
+    double c = state_(3);
+    double z = state_(4);//yaw
+    double y = state_(5);//pitch
+    double x = state_(6);//roll
+
+    double G11 = cos(x)*cos(y);
+    double G12 = -sin(x)*cos(y);
+    double G13 = 0;
+    double G14 = 0;
+    double G15 = sin(y)*(b*sin(x)-a*cos(x));
+    double G16 = -cos(y)*(a*sin(x)+b*cos(x));
+
+    double G21 = cos(x)*sin(y)*sin(z) + sin(x)*cos(z);
+    double G22 = cos(x)*cos(z)-sin(x)*sin(y)*sin(z);
+    double G23 = 0;
+    double G24 = cos(x)*(a*sin(y)*cos(z)-b*sin(z)) - sin(x)*(a*sin(z)+b*sin(y)*cos(z));
+    double G25 = cos(y)*sin(z)*(a*cos(x)-b*sin(x));
+    double G26 = cos(x)*(a*cos(z)-b*sin(y)*sin(z))-sin(x)*(a*sin(y)*sin(z)+b*cos(z));
+
+    double G31,G32,G33,G34,G35,G36;
+    G31 = G32 = G33 = G34 = G35 = G36 =0;
+    G33 = 1;
+    double G41,G42,G43,G44,G45,G46;
+    G41 = G42 = G43 = G44 = G45 = G46 =0;
+    G44 = 1;
+    double G51,G52,G53,G54,G55,G56;
+    G51 = G52 = G53 = G54 = G55 = G56 =0;
+    G55 = 1;
+    double G61,G62,G63,G64,G65,G66;
+    G61 = G62 = G63 = G64 = G65 = G66 =0;
+    G66 = 1;
+
+    G<< G11,G12,G13,G14,G15,G16, G21,G22,G23,G24,G25,G26, G31,G32,G33,G34,G35,G36,G41,G42,G43,G44,G45,G46,G51,G52,G53,G54,G55,G56,G61,G62,G63,G64,G65,G66;
 
 //	G << 1, 0, -sin(state(2)) * odometry(0) - cos(state(2)) * odometry(1), 0, 1, cos(
 //			state(2)) * odometry(0) - sin(state(2)) * odometry(1), 0, 0, 1;
 
-//	// cout << "G: " << endl << G << endl;
+     std::cout << "G: " << std::endl << G << std::endl;
 
 //	sigma = G * sigma * G.transpose() + Q;
 
