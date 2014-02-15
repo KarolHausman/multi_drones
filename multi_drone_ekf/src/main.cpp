@@ -286,8 +286,17 @@ struct Ardrone {
                     Eigen::Vector3f measurement;
                     measurement(0) = tag_pose_.getOrigin().getX();
                     measurement(1) = tag_pose_.getOrigin().getY();
-                    measurement(2) = tag_pose_.getRotation().getZ();
-                    kalman_filter_.correctionStep(measurement,world_to_cam_transform_,drone_in_marker_coord_,state_pose_,tag_pose_);
+//                    measurement(2) = tag_pose_.getRotation().getZ();
+                    double roll = 0;
+                    double pitch = 0;
+                    double yaw = 0;
+                    tag_pose_.getBasis().getEulerYPR(yaw,pitch,roll);
+                    measurement(2)= yaw;
+
+                    state_pose_.getBasis().getEulerYPR(yaw,pitch,roll);
+                    double z = state_pose_.getOrigin().getZ();
+
+                    kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse(),roll, pitch, z);
                 }
 
 
@@ -468,6 +477,186 @@ int main(int argc, char **argv) {
             br.sendTransform(
                     tf::StampedTransform(drone_observer.world_to_cam_transform_*drone_observer.tag_pose_, ros::Time::now(), "/zeta_marker",
                             "/beta_marker"));
+
+
+//            tf::Transform world_to_beta = drone_observer.world_to_cam_transform_*drone_observer.tag_pose_;
+
+            tf::Transform cam_to_world = camera.tag_pose_;
+//            tf::Transform marker_projection /*= camera.tag_pose_ * world_to_beta*/;
+
+
+
+
+
+
+
+
+
+
+
+
+            tf::Transform world_to_cam = drone_observer.world_to_cam_transform_;
+            tf::Transform cam_to_marker = drone_observer.tag_pose_;
+            tf::Transform state_6D = world_to_cam*cam_to_marker;
+
+            double c_yaw = 0;
+            double c_pitch = 0;
+            double c_roll = 0;
+
+            world_to_cam.getBasis().getEulerYPR(c_yaw,c_pitch,c_roll);
+
+            double c_x =0;double c_y=0; double c_z=0;
+
+            c_x = cam_to_world.getOrigin().getX();
+            c_y = cam_to_world.getOrigin().getY();
+            c_z = cam_to_world.getOrigin().getZ();
+
+
+
+
+
+
+            double p_yaw = 0;
+            double p_pitch = 0;
+            double p_roll = 0;
+
+            state_6D.getBasis().getEulerYPR(p_yaw,p_pitch,p_roll);
+
+            double p_x =0; double p_y=0; double p_z=0;
+
+            p_x = state_6D.getOrigin().getX();
+            p_y = state_6D.getOrigin().getY();
+            p_z = state_6D.getOrigin().getZ();
+
+
+
+
+
+
+
+
+
+
+            double z_yaw = 0;
+            double z_pitch = 0;
+            double z_roll = 0;
+
+            cam_to_marker.getBasis().getEulerYPR(z_yaw,z_pitch,z_roll);
+
+            double z_x =0;double z_y=0; double z_z=0;
+
+            z_x = cam_to_marker.getOrigin().getX();
+            z_y = cam_to_marker.getOrigin().getY();
+            z_z = cam_to_marker.getOrigin().getZ();
+
+
+
+
+
+            Eigen::Matrix3d c_3d;
+            Eigen::Matrix3d z_3d;
+            Eigen::Matrix3d p_3d;
+
+            c_3d << cos(c_yaw),-sin(c_yaw),c_x,
+                    sin(c_yaw),cos(c_yaw),c_y,
+                    0,0,1;
+
+
+            p_3d << cos(p_yaw),-sin(p_yaw),p_x,
+                    sin(p_yaw),cos(p_yaw),p_y,
+                    0,0,1;
+
+            Eigen::Matrix3d p_3d_to_check;
+
+            z_3d = c_3d.inverse()*p_3d;
+
+            p_3d_to_check = c_3d*z_3d;
+
+
+//            std::cout<<"real: \n"<<p_3d<<std::endl;
+
+//            std::cout<<"to check: \n"<<p_3d_to_check<<std::endl;
+
+
+//            br.sendTransform(
+//            tf::StampedTransform(state_6D, ros::Time::now()/*nav_msg->header.stamp*/,
+//                    "/zeta_marker", "/marker_2D_projection" ));
+
+
+
+//            cam_to_beta2d = drone_observer.tag_pose_;
+
+//            double yaw = 0;
+//            double pitch = 0;
+//            double roll = 0;
+//            cam_to_world.getBasis().getEulerYPR(yaw,pitch,roll);
+
+
+//            btMatrix3x3 rotationMatrix /*= cam_to_world.getBasis()*/;
+//            rotationMatrix.setEulerYPR(0,pitch,roll);
+//            btQuaternion q(0,pitch,roll);
+//            cam_to_world.setRotation(q);
+
+
+
+
+//            double x =0;double y=0; double z=0;
+
+//            x = cam_to_world.getOrigin().getX();
+//            y = cam_to_world.getOrigin().getY();
+//            z = cam_to_world.getOrigin().getZ();
+
+//            btVector3 transl(x,y,z);
+//            cam_to_world.setOrigin(transl);
+
+////            btVector3 world_to_beta_trans;
+
+//            tf::Vector3 world_to_beta_trans_tf = world_to_beta.getOrigin();
+
+//            btVector3 world_to_beta_trans(world_to_beta_trans_tf.getX(),world_to_beta_trans_tf.getY() ,world_to_beta_trans_tf.getZ() );
+//            world_to_beta_trans = rotationMatrix * world_to_beta_trans;
+
+//            double x1=0; double y1=0; double z1=0;
+
+//            x1 = world_to_beta_trans.getX();
+//            y1 = world_to_beta_trans.getY();
+//            z1 = world_to_beta_trans.getZ();
+
+
+//            double yaw1 = 0;
+//            double pitch1 = 0;
+//            double roll1 = 0;
+//            world_to_beta.getBasis().getEulerYPR(yaw1,pitch1,roll1);
+//            btMatrix3x3 rotationMatrix1 /*= cam_to_world.getBasis()*/;
+//            rotationMatrix1.setEulerYPR(yaw1,pitch1,roll1);
+//            rotationMatrix1 = rotationMatrix * rotationMatrix1;
+
+//            world_to_beta.setBasis(rotationMatrix1);
+
+
+
+//            world_to_beta_trans.setX(x+x1);
+//            world_to_beta_trans.setY(y+y1);
+//            world_to_beta_trans.setZ(z+z1);
+
+//            world_to_beta.setOrigin(world_to_beta_trans);
+
+
+
+//            marker_projection = /*cam_to_world **/ world_to_beta;
+
+//            btVector3 translation(x,y,0);
+//            btQuaternion rotation;
+//            rotation.setEulerZYX(0, 0,0);
+
+//            marker_projection.getOrigin().setZ(0);
+
+//            marker_projection.setOrigin(translation);
+//            marker_projection.setRotation(rotation);
+
+//            cam_to_beta2d.setOrigin(rotationMatrix*cam_to_world.getOrigin());
+//            cam_to_beta2d.setRotation(rotation);
+
 
 //            br.sendTransform(
 //            tf::StampedTransform(drone_observer.drone_in_marker_coord_, ros::Time::now()/*nav_msg->header.stamp*/,
