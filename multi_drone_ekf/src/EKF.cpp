@@ -12,7 +12,11 @@ void ExtendedKalmanFilter::init(const tf::Transform& world_to_drone_pose)
 {
     state_(0) = world_to_drone_pose.getOrigin().getX();
     state_(1) = world_to_drone_pose.getOrigin().getY();
-    state_(2) = world_to_drone_pose.getRotation().getZ();
+    double yaw = 0;
+    double pitch = 0;
+    double roll = 0;
+    world_to_drone_pose.getBasis().getEulerYPR(yaw, pitch, roll);
+    state_(2) = yaw;
     initialized_ = true;
 
 }
@@ -72,6 +76,8 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector3f& measurement, co
     H_transform.getBasis().getEulerYPR(h_yaw, h_pitch, h_roll);
 
     h << H_transform.getOrigin().getX(),H_transform.getOrigin().getY(),h_yaw;
+
+
 
     tf::Matrix3x3 c_rot = cam_to_world_transform.getBasis();
     tf::Vector3 c_transl = cam_to_world_transform.getOrigin();
@@ -143,6 +149,7 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector3f& measurement, co
     Eigen::Matrix3f brackets = dh * sigma_ * dh.transpose() + R_;
 
     K = sigma_ * dh.transpose() * brackets.inverse();
+//    K = Eigen::Matrix3f::Identity();
 
     sigma_ = (Eigen::Matrix3f::Identity() - K * dh) * sigma_;
 
@@ -150,7 +157,19 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector3f& measurement, co
     //normalize yaw angle
     brackets2(2) = atan2(sin(brackets2(2)), cos(brackets2(2)));
 
+//    std::cerr<<"measurement - h: "<<brackets2<<std::endl;
+
+//    std::cout<<"h: "<<h<<std::endl;
+
+    std::cout<<"K: "<<K<<std::endl;
+
+
+
+//    printState();
     state_ = state_ + K * brackets2;
+//    printState();
+
+
 }
 
 

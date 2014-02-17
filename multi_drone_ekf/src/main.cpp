@@ -217,6 +217,10 @@ struct Ardrone {
     tf::Transform world_to_drone_pose_;
     tf::Transform world_to_cam_transform_;
 
+    double yaw_;
+    double pitch_;
+    double roll_;
+
 
 
 
@@ -286,7 +290,6 @@ struct Ardrone {
                     Eigen::Vector3f measurement;
                     measurement(0) = tag_pose_.getOrigin().getX();
                     measurement(1) = tag_pose_.getOrigin().getY();
-//                    measurement(2) = tag_pose_.getRotation().getZ();
                     double roll = 0;
                     double pitch = 0;
                     double yaw = 0;
@@ -296,7 +299,13 @@ struct Ardrone {
                     state_pose_.getBasis().getEulerYPR(yaw,pitch,roll);
                     double z = state_pose_.getOrigin().getZ();
 
-                    kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse(),roll, pitch, z);
+//                    kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse(),roll, pitch, z);
+
+//                    btQuaternion newRotation;
+//                    newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
+//                    state_pose_.setRotation(newRotation);
+//                    btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ);
+//                    state_pose_.setOrigin(newOrigin);
                 }
 
 
@@ -317,9 +326,12 @@ struct Ardrone {
                 << "\nNav_msg yaw: " << nav_msg->rotZ
                 << "\nNav_msg height: " << nav_msg->altd);
 
+
+
         if (prevTime_ == 0) {
             prevTime_ = nav_msg->header.stamp.toSec();
             dt = (double) 1 / 14;
+            last_yaw_ = (nav_msg->rotZ) / (180.0 / M_PI);
         } else {
             dt = (nav_msg->header.stamp.toSec() - prevTime_);
             prevTime_ = nav_msg->header.stamp.toSec();
@@ -331,9 +343,9 @@ struct Ardrone {
         distZ = (double) (nav_msg->altd) / 1000.0; //altd value in millimeter
 
         //Get absolute rotation values
-        double yaw = ((nav_msg->rotZ) / (180.0 / M_PI));
-        double pitch = ((nav_msg->rotY) / (180.0 / M_PI));
-        double roll = ((nav_msg->rotX) / (180.0 / M_PI));
+        yaw_ = ((nav_msg->rotZ) / (180.0 / M_PI));
+        pitch_ = ((nav_msg->rotY) / (180.0 / M_PI));
+        roll_ = ((nav_msg->rotX) / (180.0 / M_PI));
 
 
 
@@ -341,9 +353,11 @@ struct Ardrone {
 
         odometry(0) = distX; // local position update
         odometry(1) = distY; // local position update
-        odometry(2) = (yaw - last_yaw_) /*/ 180 * M_PI*/; // treat absolute value as incremental update
+        odometry(2) = (yaw_ - last_yaw_) /*/ 180 * M_PI*/; // treat absolute value as incremental update
 
-        last_yaw_ = yaw;
+//        std::cout<<"odometry: "<<odometry<<std::endl;
+
+        last_yaw_ = yaw_;
 
 
 
@@ -358,9 +372,8 @@ struct Ardrone {
             kalman_filter_.predictionStep(odometry);
 
 
-
             btQuaternion newRotation;
-            newRotation.setEulerZYX(kalman_filter_.state_(2), pitch, roll);
+            newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
             state_pose_.setRotation(newRotation);
             btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ);
             state_pose_.setOrigin(newOrigin);
@@ -429,6 +442,9 @@ struct Ardrone {
         last_yaw_ = 0;
         initialized_ = false;
         distZ=0;
+        yaw_ = 0;
+        pitch_ = 0;
+        roll_ = 0;
 
 
 
@@ -711,6 +727,40 @@ int main(int argc, char **argv) {
             br.sendTransform(
             tf::StampedTransform(drone_observer.world_to_cam_transform_.inverse()*drone_observer.state_pose_*drone_observer.drone_in_marker_coord_.inverse(), ros::Time::now()/*nav_msg->header.stamp*/,
                     "/camera", "/beta_from_H"));
+
+
+
+
+
+
+            tf::Transform H_transform = drone_observer.world_to_cam_transform_.inverse()*drone_observer.state_pose_*drone_observer.drone_in_marker_coord_.inverse();
+
+            double h_yaw = 0;
+            double h_pitch = 0;
+            double h_roll = 0;
+
+            H_transform.getBasis().getEulerYPR(h_yaw, h_pitch, h_roll);
+
+            Eigen::Vector3f h;
+
+
+            h << H_transform.getOrigin().getX(),H_transform.getOrigin().getY(),h_yaw;
+//            std::cout<<"h from main: "<<h<<std::endl;
+
+            Eigen::Vector3f measurement;
+            measurement(0) = drone_observer.tag_pose_.getOrigin().getX();
+            measurement(1) = drone_observer.tag_pose_.getOrigin().getY();
+            double roll = 0;
+            double pitch = 0;
+            double yaw = 0;
+            drone_observer.tag_pose_.getBasis().getEulerYPR(yaw,pitch,roll);
+            measurement(2)= yaw;
+
+            Eigen::Vector3f brackets2 = measurement - h;
+            //normalize yaw angle
+            brackets2(2) = atan2(sin(brackets2(2)), cos(brackets2(2)));
+
+            std::cerr<<"FROM MAIN measurement - h: "<<brackets2<<std::endl;
 
 
 

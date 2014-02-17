@@ -46,8 +46,8 @@ struct ExtendedKalmanFilter {
   state_ =  Eigen::Vector3f::Zero();
   sigma_ = Eigen::Matrix3f::Zero(); sigma_(0,0) = sigma_(1,1) = 1; sigma_(2,2) = 1;
 
-  Q_ = Eigen::Matrix3f::Zero();     Q_(0,0) = 0.004; Q_(1,1) = 0.002; Q_(2,2) = 0.00002;
-  R_ = Eigen::Matrix3f::Zero();     R_(0,0) = R_(1,1) = 0.01; R_(2,2) = 0.0001;
+  Q_ = Eigen::Matrix3f::Zero();     Q_(0,0) = 0.02; Q_(1,1) = 0.02; Q_(2,2) = 0.002;
+  R_ = Eigen::Matrix3f::Zero();     R_(0,0) = R_(1,1) = 0.001; R_(2,2) = 0.0001;
   initialized_ = false;
 
  }
