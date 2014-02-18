@@ -80,27 +80,27 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
 
     tf::Matrix3x3 c_rot = cam_to_world_transform.getBasis();
-    tf::Vector3 c_transl = cam_to_world_transform.getOrigin();
+//    tf::Vector3 c_transl = cam_to_world_transform.getOrigin();
 
-    double c11,c12,c13,c21,c22,c23,c31,c32,c33,c41,c42,c43;
+    double c11,c12,/*c13,*/c21,c22,/*c23,*/c31,c32/*,c33,c41,c42,c43*/;
 
     c11 = c_rot.getRow(0).getX(); c21 = c_rot.getRow(0).getY(); c31 = c_rot.getRow(0).getZ();
     c12 = c_rot.getRow(1).getX(); c22 = c_rot.getRow(1).getY(); c32 = c_rot.getRow(1).getZ();
-    c13 = c_rot.getRow(2).getX(); c23 = c_rot.getRow(2).getY(); c33 = c_rot.getRow(2).getZ();
+//    c13 = c_rot.getRow(2).getX(); c23 = c_rot.getRow(2).getY(); c33 = c_rot.getRow(2).getZ();
 
-    c41 = c_transl.getX();
-    c42 = c_transl.getY();
-    c43 = c_transl.getZ();
+//    c41 = c_transl.getX();
+//    c42 = c_transl.getY();
+//    c43 = c_transl.getZ();
 
 
     tf::Matrix3x3 m_rot = drone_to_marker_transform.getBasis();
     tf::Vector3 m_transl = drone_to_marker_transform.getOrigin();
 
-    double m11,m12,m13,m21,m22,m23,m31,m32,m33,m41,m42,m43;
+    double m11,m12,m13,/*m21,m22,m23,m31,m32,m33.*/m41,m42,m43;
 
-    m11 = m_rot.getRow(0).getX(); m21 = m_rot.getRow(0).getY(); m31 = m_rot.getRow(0).getZ();
-    m12 = m_rot.getRow(1).getX(); m22 = m_rot.getRow(1).getY(); m32 = m_rot.getRow(1).getZ();
-    m13 = m_rot.getRow(2).getX(); m23 = m_rot.getRow(2).getY(); m33 = m_rot.getRow(2).getZ();
+    m11 = m_rot.getRow(0).getX(); /*m21 = m_rot.getRow(0).getY(); m31 = m_rot.getRow(0).getZ();*/
+    m12 = m_rot.getRow(1).getX(); /*m22 = m_rot.getRow(1).getY(); m32 = m_rot.getRow(1).getZ();*/
+    m13 = m_rot.getRow(2).getX(); /*m23 = m_rot.getRow(2).getY(); m33 = m_rot.getRow(2).getZ();*/
 
     m41 = m_transl.getX();
     m42 = m_transl.getY();
@@ -193,22 +193,21 @@ dh<< c11,c21,m41*cos(pitch)*(c21*cos(state_(2)) - c11*sin(state_(2))) +
 
 
 
-//    dh << -cos(state(2)), sin(state(2)), -sin(state(2)) * (global_marker_pose(0) - state(0)) + cos(state(2)) * (global_marker_pose(1) - state(1)),
-//            -sin(state(2)), -cos(state(2)), cos(state(2)) * (global_marker_pose(0) - state(0)) - sin(state(2)) * (global_marker_pose(1) - state(1)),
-//            0, 0, -1;
 
     Eigen::Matrix3f brackets = dh * sigma_ * dh.transpose() + R_;
 
     K = sigma_ * dh.transpose() * brackets.inverse();
-//    K = Eigen::Matrix3f::Identity();
 
     sigma_ = (Eigen::Matrix3f::Identity() - K * dh) * sigma_;
 
     Eigen::Vector3f measurement_3dog = Eigen::Vector3f::Zero();
 
-    reduceMeasurementDimensions(measurement, cam_to_world_transform.inverse(), drone_to_marker_transform, measurement_3dog);
+    measurement_3dog(0) = measurement(0);
+    measurement_3dog(1) = measurement(1);
+    measurement_3dog(2) = measurement(5);
+//    reduceMeasurementDimensions(measurement, cam_to_world_transform.inverse(), drone_to_marker_transform.inverse(), measurement_3dog);
 
-    Eigen::Vector3f brackets2 = measurement - h;
+    Eigen::Vector3f brackets2 = measurement_3dog - h;
     //normalize yaw angle
     brackets2(2) = atan2(sin(brackets2(2)), cos(brackets2(2)));
 
@@ -227,7 +226,7 @@ dh<< c11,c21,m41*cos(pitch)*(c21*cos(state_(2)) - c11*sin(state_(2))) +
 
 }
 
-void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& measurement, const tf::Transform& world_to_cam, const tf::Transform& drone_to_marker_transform, Eigen::Vector3f& measurement_3dog)
+void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& measurement, const tf::Transform& world_to_cam, const tf::Transform& marker_to_drone, Eigen::Vector3f& measurement_3dog)
 {
     double c_yaw = 0;
     double c_pitch = 0;
@@ -235,11 +234,53 @@ void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& m
 
     world_to_cam.getBasis().getEulerYPR(c_yaw,c_pitch,c_roll);
 
-    double c_x =0;double c_y=0; double c_z=0;
+    double c_x =0;double c_y=0; //double c_z=0;
 
-    c_x = cam_to_world.getOrigin().getX();
-    c_y = cam_to_world.getOrigin().getY();
-    c_z = cam_to_world.getOrigin().getZ();
+    c_x = world_to_cam.getOrigin().getX();
+    c_y = world_to_cam.getOrigin().getY();
+//    c_z = world_to_cam.getOrigin().getZ();
+
+
+    tf::Transform cam_to_marker;
+    tf::Vector3 origin(measurement(0), measurement(1), measurement(2));
+    cam_to_marker.setOrigin(origin);
+    tf::Quaternion rotation;
+    rotation.setRPY(measurement(3),measurement(4), measurement(5));
+    cam_to_marker.setRotation(rotation);
+
+    tf::Transform world_to_marker = world_to_cam * cam_to_marker;
+
+    double m_yaw = 0;
+    double m_pitch = 0;
+    double m_roll = 0;
+
+    world_to_marker.getBasis().getEulerYPR(m_yaw,m_pitch,m_roll);
+
+    double m_x =0;double m_y=0; //double m_z=0;
+
+    m_x = world_to_marker.getOrigin().getX();
+    m_y = world_to_marker.getOrigin().getY();
+//    m_z = world_to_marker.getOrigin().getZ();
+
+    Eigen::Matrix3d c_3d;
+    Eigen::Matrix3d z_3d;
+    Eigen::Matrix3d m_3d;
+
+    c_3d << cos(c_yaw),-sin(c_yaw),c_x,
+            sin(c_yaw),cos(c_yaw),c_y,
+            0,0,1;
+
+
+    m_3d << cos(m_yaw),-sin(m_yaw),m_x,
+            sin(m_yaw),cos(m_yaw),m_y,
+            0,0,1;
+
+    z_3d = c_3d.inverse()*m_3d;
+
+    measurement_3dog(0) = z_3d(0,2);
+    measurement_3dog(1) = z_3d(1,2);
+    measurement_3dog(2) = atan2(z_3d(1,0),z_3d(0,0));
+
 
 
 
