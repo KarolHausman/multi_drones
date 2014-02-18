@@ -31,10 +31,11 @@ struct ExtendedKalmanFilter {
  bool initialized_;
 
  void predictionStep(const Eigen::Vector3f& odometry); // x_{t+1} = g(x_t,u) and update uncertainty
-// void correctionStep(const Eigen::Vector3f& measurement);  // compare expected and measured values, update state and uncertainty
- void correctionStep(const Eigen::Vector3f& measurement, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform, const double& roll, const double& pitch, const double& z); // compare expected and measured values, update state and uncertainty
 
-// void correctionStep(const Eigen::Vector3f& measurement, const tf::Transform& world_to_cam_transform_, const tf::Transform& drone_in_marker_coord_, const tf::Transform& state_pose_, tf::Transform& tag_pose_); // compare expected and measured values, update state and uncertainty
+ void correctionStep(const Eigen::Vector6f& measurement, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform, const double& roll, const double& pitch, const double& z); // compare expected and measured values, update state and uncertainty
+
+ void reduceMeasurementDimensions (const Eigen::Vector6f& measurement, const tf::Transform& world_to_cam, const tf::Transform& drone_to_marker_transform, Eigen::Vector3f& measurement_3dog);
+
 
  void init(const tf::Transform& world_to_drone_pose);
 

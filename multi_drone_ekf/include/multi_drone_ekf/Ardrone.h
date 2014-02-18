@@ -37,7 +37,7 @@ struct Ardrone {
     double prevTime_;
     double last_yaw_;
     bool initialized_;
-    double distZ;
+    double distZ_;
     tf::Transform state_pose_;
     tf::Transform world_to_drone_pose_;
     tf::Transform world_to_cam_transform_;

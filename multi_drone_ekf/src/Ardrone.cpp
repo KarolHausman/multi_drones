@@ -72,25 +72,30 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
             if(initialized_)
             {
-                Eigen::Vector3f measurement;
+                Eigen::Vector6f measurement;
                 measurement(0) = tag_pose_.getOrigin().getX();
                 measurement(1) = tag_pose_.getOrigin().getY();
+                measurement(2) = tag_pose_.getOrigin().getZ();
+
                 double roll = 0;
                 double pitch = 0;
                 double yaw = 0;
                 tag_pose_.getBasis().getEulerYPR(yaw,pitch,roll);
-                measurement(2)= yaw;
+                measurement(3)= roll;
+                measurement(4)= pitch;
+                measurement(5)= yaw;
+
 
                 state_pose_.getBasis().getEulerYPR(yaw,pitch,roll);
                 double z = state_pose_.getOrigin().getZ();
 
-                //                    kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse(),roll, pitch, z);
+                kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse(),roll_, pitch_, distZ_);
 
-                //                    btQuaternion newRotation;
-                //                    newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
-                //                    state_pose_.setRotation(newRotation);
-                //                    btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ);
-                //                    state_pose_.setOrigin(newOrigin);
+                btQuaternion newRotation;
+                newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
+                state_pose_.setRotation(newRotation);
+                btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ_);
+                state_pose_.setOrigin(newOrigin);
             }
 
 
@@ -125,7 +130,7 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
     //Calculate changes of translation (incremental translation values)
     double distX = nav_msg->vx * dt / 1000.0;
     double distY = nav_msg->vy * dt / 1000.0;
-    distZ = (double) (nav_msg->altd) / 1000.0; //altd value in millimeter
+    distZ_ = (double) (nav_msg->altd) / 1000.0; //altd value in millimeter
 
     //Get absolute rotation values
     yaw_ = ((nav_msg->rotZ) / (180.0 / M_PI));
@@ -160,7 +165,7 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
         btQuaternion newRotation;
         newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
         state_pose_.setRotation(newRotation);
-        btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ);
+        btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ_);
         state_pose_.setOrigin(newOrigin);
 
 
@@ -193,7 +198,7 @@ Ardrone::Ardrone(uint marker_nr) {
     navCB_done_ = false;
     last_yaw_ = 0;
     initialized_ = false;
-    distZ=0;
+    distZ_=0;
     yaw_ = 0;
     pitch_ = 0;
     roll_ = 0;
