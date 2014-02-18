@@ -86,8 +86,8 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
                 measurement(5)= yaw;
 
 
-                state_pose_.getBasis().getEulerYPR(yaw,pitch,roll);
-                double z = state_pose_.getOrigin().getZ();
+//                state_pose_.getBasis().getEulerYPR(yaw,pitch,roll);
+//                double z = state_pose_.getOrigin().getZ();
 
                 kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse(),roll_, pitch_, distZ_);
 

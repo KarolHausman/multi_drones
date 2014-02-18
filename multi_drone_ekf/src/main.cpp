@@ -140,7 +140,6 @@ int main(int argc, char **argv) {
 
 //            tf::Transform world_to_beta = drone_observer.world_to_cam_transform_*drone_observer.tag_pose_;
 
-            tf::Transform cam_to_world = camera.tag_pose_;
 //            tf::Transform marker_projection /*= camera.tag_pose_ * world_to_beta*/;
 
 
@@ -153,7 +152,8 @@ int main(int argc, char **argv) {
 
 
 
-
+/*
+            tf::Transform cam_to_world = camera.tag_pose_;
             tf::Transform world_to_cam = drone_observer.world_to_cam_transform_;
             tf::Transform cam_to_marker = drone_observer.tag_pose_;
             tf::Transform state_6D = world_to_cam*cam_to_marker;
@@ -236,7 +236,7 @@ int main(int argc, char **argv) {
 
 //            std::cout<<"to check: \n"<<p_3d_to_check<<std::endl;
 
-
+*/
 
 
 
