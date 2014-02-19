@@ -86,7 +86,7 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
                 measurement(5)= yaw;
 
 
-                kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse(),roll_, pitch_, distZ_);
+                kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse());
 
                 btQuaternion newRotation;
                 newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
@@ -142,7 +142,6 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
     odometry(1) = distY; // local position update
     odometry(2) = (yaw_ - last_yaw_) /*/ 180 * M_PI*/; // treat absolute value as incremental update
 
-    //        std::cout<<"odometry: "<<odometry<<std::endl;
 
     last_yaw_ = yaw_;
 

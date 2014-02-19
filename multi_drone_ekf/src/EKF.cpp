@@ -11,18 +11,18 @@
 void ExtendedKalmanFilter::computeHJacobian(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat, Eigen::Matrix3f& dh)
 {
 
-    double c11,c12,c13,c21,c22,c23,m11,m12,m13,m21,m22,m23;
+    double c11,c12,/*c13,*/c21,c22,/*c23,*/m11,/*m12,*/m13,m21,/*m22,*/m23;
     tf::Matrix3x3 c_rot = cam_to_world_flat.getBasis();
-    tf::Vector3 c_transl = cam_to_world_flat.getOrigin();
+//    tf::Vector3 c_transl = cam_to_world_flat.getOrigin();
 
-    c11 = c_rot.getRow(0).getX(); c12 = c_rot.getRow(0).getY(); c13 = c_transl.getX();
-    c21 = c_rot.getRow(1).getX(); c22 = c_rot.getRow(1).getY(); c23 = c_transl.getY();
+    c11 = c_rot.getRow(0).getX(); c12 = c_rot.getRow(0).getY(); //c13 = c_transl.getX();
+    c21 = c_rot.getRow(1).getX(); c22 = c_rot.getRow(1).getY(); //c23 = c_transl.getY();
 
 
     tf::Matrix3x3 m_rot = drone_to_marker_flat.getBasis();
     tf::Vector3 m_transl = drone_to_marker_flat.getOrigin();
-    m11 = m_rot.getRow(0).getX(); m12 = m_rot.getRow(0).getY(); m13 = m_transl.getX();
-    m21 = m_rot.getRow(1).getX(); m22 = m_rot.getRow(1).getY(); m23 = m_transl.getY();
+    m11 = m_rot.getRow(0).getX();/* m12 = m_rot.getRow(0).getY();*/ m13 = m_transl.getX();
+    m21 = m_rot.getRow(1).getX();/* m22 = m_rot.getRow(1).getY();*/ m23 = m_transl.getY();
 
 
 
@@ -88,7 +88,7 @@ void ExtendedKalmanFilter::predictionStep(const Eigen::Vector3f& odometry) {
 
 }
 
-void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform, const double& roll, const double& pitch, const double& z) { // compare expected and measured values, update state and uncertainty
+void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform) { // compare expected and measured values, update state and uncertainty
 
     Eigen::Vector3f h;
 
@@ -206,18 +206,11 @@ void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& m
 
     world_to_marker.getBasis().getEulerYPR(m_yaw,m_pitch,m_roll);
 
-    double m_x =0;double m_y=0; double m_z=0;
+    double m_x =0;double m_y=0; //double m_z=0;
 
     m_x = world_to_marker.getOrigin().getX();
     m_y = world_to_marker.getOrigin().getY();
-    m_z = world_to_marker.getOrigin().getZ();
-
-//    std::cout<<"world to marker: \n"<<"m_x= "<<m_x<<std::endl;
-//    std::cout<<"m_y= "<<m_y<<std::endl;
-//    std::cout<<"m_z= "<<m_z<<std::endl;
-//    std::cout<<"m_roll= "<<m_roll<<std::endl;
-//    std::cout<<"m_pitch= "<<m_pitch<<std::endl;
-//    std::cout<<"m_yaw= "<<m_yaw<<std::endl;
+//    m_z = world_to_marker.getOrigin().getZ();
 
 
     tf::Transform c_3d,z_3d,m_3d;
@@ -240,19 +233,9 @@ void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& m
     z_3d = c_3d.inverse()*m_3d;
 
 
-
-//    tf::Transform m_3d_check = c_3d*z_3d;
-//    std::cout<<"m_3d: \n"<<tf::getYaw(m_3d.getRotation())<<std::endl;
-//    std::cout<<"m_3d check: \n"<<tf::getYaw(m_3d_check.getRotation())<<std::endl;
-
-
     measurement_3dog(0) = z_3d.getOrigin().getX();
     measurement_3dog(1) = z_3d.getOrigin().getY();
     measurement_3dog(2) = tf::getYaw(z_3d.getRotation());
-
-//    std::cout<<"MEASUREMENT 6DOG: "<<measurement<<std::endl;
-//    std::cout<<"MEASUREMENT 3DOG: "<<measurement_3dog<<std::endl;
-
 
 }
 
