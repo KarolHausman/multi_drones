@@ -7,6 +7,52 @@
 
 #include "multi_drone_ekf/EKF.h"
 
+void ExtendedKalmanFilter::computeHprimeJacobian (const tf::Transform& world_to_cam_flat, const Eigen::Vector6f& measurement, Eigen::MatrixXf& dh_prime)
+{
+
+    //pitch and roll of the measurement
+    double p,y;
+    p = measurement(4);
+    y = measurement(5);
+
+    double c11,c12,c13,/*c14,*/c21,c22,c23/*,c24,c31,c32,c33,c34*/;
+    tf::Matrix3x3 c_rot = world_to_cam_flat.getBasis();
+//    tf::Vector3 c_transl = cam_to_world_flat.getOrigin();
+
+    c11 = c_rot.getRow(0).getX(); c12 = c_rot.getRow(0).getY(); c13 = c_rot.getRow(0).getZ(); //c14 = c_transl.getX();
+    c21 = c_rot.getRow(1).getX(); c22 = c_rot.getRow(1).getY(); c23 = c_rot.getRow(1).getZ(); //c24 = c_transl.getY();
+    //c31 = c_rot.getRow(2).getX(); c32 = c_rot.getRow(2).getY(); c33 = c_rot.getRow(2).getZ(); c34 = c_transl.getZ();
+
+
+
+
+    dh_prime << c11*cos(atan2(c21,c11)) + c21*sin(atan2(c21,c11)),
+            c12*cos(atan2(c21,c11)) + c22*sin(atan2(c21,c11)),
+            c13*cos(atan2(c21,c11)) + c23*sin(atan2(c21,c11)),0,0,0,
+           c21*cos(atan2(c21,c11)) - c11*sin(atan2(c21,c11)),
+            c22*cos(atan2(c21,c11)) - c12*sin(atan2(c21,c11)),
+            c23*cos(atan2(c21,c11)) - c13*sin(atan2(c21,c11)),0,0,0,
+           0,0,0,0,((c13*c21 - c11*c23)*cos(y) + (c13*c22 - c12*c23)*sin(y))/
+             ((pow(c13,2) + pow(c23,2))*pow(sin(p),2) -
+               sin(2*p)*(c11*c13*cos(y) + c21*c23*cos(y) + c12*c13*sin(y) +
+                  c22*c23*sin(y)) + pow(cos(p),2)*
+                ((pow(c11,2) + pow(c21,2))*pow(cos(y),2) +
+                  (pow(c12,2) + pow(c22,2))*pow(sin(y),2) +
+                  (c11*c12 + c21*c22)*sin(2*y))),
+            (cos(p)*((-(c12*c21) + c11*c22)*cos(p) +
+                 sin(p)*((-(c13*c22) + c12*c23)*cos(y) + (c13*c21 - c11*c23)*sin(y))
+                 ))/((pow(c13,2) + pow(c23,2))*pow(sin(p),2) -
+               sin(2*p)*(c11*c13*cos(y) + c21*c23*cos(y) + c12*c13*sin(y) +
+                  c22*c23*sin(y)) + pow(cos(p),2)*
+                ((pow(c11,2) + pow(c21,2))*pow(cos(y),2) +
+                  (pow(c12,2) + pow(c22,2))*pow(sin(y),2) +
+                  (c11*c12 + c21*c22)*sin(2*y)));
+
+
+}
+
+
+
 
 void ExtendedKalmanFilter::computeHJacobian(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat, Eigen::Matrix3f& dh)
 {
@@ -151,6 +197,10 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
     Eigen::Matrix3f K;
 
+    Eigen::MatrixXf dh_prime(3,6);
+    computeHprimeJacobian(cam_to_world_flat.inverse(),measurement,dh_prime);
+
+    R_=dh_prime*R_prime_*dh_prime.transpose();
 
     Eigen::Matrix3f brackets = dh * sigma_ * dh.transpose() + R_;
 
@@ -163,6 +213,9 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
     reduceMeasurementDimensions(measurement, cam_to_world_transform.inverse(), drone_to_marker_transform.inverse(), measurement_3dog);
 
+
+
+
     Eigen::Vector3f brackets2 = measurement_3dog - h;
     //normalize yaw angle
     brackets2(2) = atan2(sin(brackets2(2)), cos(brackets2(2)));
@@ -174,6 +227,8 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
 
 }
+
+
 
 void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& measurement, const tf::Transform& world_to_cam, const tf::Transform& marker_to_drone, Eigen::Vector3f& measurement_3dog)
 {

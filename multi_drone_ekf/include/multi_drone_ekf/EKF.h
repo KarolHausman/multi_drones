@@ -27,10 +27,13 @@ struct ExtendedKalmanFilter {
  Eigen::Matrix3f sigma_; // uncertainty of state
 
  Eigen::Matrix3f Q_; // process noise
- Eigen::Matrix3f R_; // observation noise
+ Eigen::Matrix6f R_prime_; // observation noise 6dog
+ Eigen::Matrix3f R_; // observation noise 3dog
  bool initialized_;
 
  void computeHJacobian(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat, Eigen::Matrix3f& dh);
+
+ void computeHprimeJacobian (const tf::Transform& world_to_cam_flat, const Eigen::Vector6f& measurement, Eigen::MatrixXf& dh_prime);
 
 
  void predictionStep(const Eigen::Vector3f& odometry); // x_{t+1} = g(x_t,u) and update uncertainty
@@ -50,8 +53,8 @@ struct ExtendedKalmanFilter {
   state_ =  Eigen::Vector3f::Zero();
   sigma_ = Eigen::Matrix3f::Zero(); sigma_(0,0) = sigma_(1,1) = 1; sigma_(2,2) = 1;
 
-  Q_ = Eigen::Matrix3f::Zero();     Q_(0,0) = 0.2; Q_(1,1) = 0.2; Q_(2,2) = 0.02;
-  R_ = Eigen::Matrix3f::Zero();     R_(0,0) = R_(1,1) = 0.01; R_(2,2) = 0.001;
+  Q_ = Eigen::Matrix3f::Zero();     Q_(0,0) = 0.02; Q_(1,1) = 0.02; Q_(2,2) = 0.002;
+  R_prime_ = Eigen::Matrix6f::Zero();     R_prime_(0,0) = R_prime_(1,1) = R_prime_(2,2) = 0.01; R_prime_(3,3) = R_prime_(4,4) = 0.01; R_prime_(5,5) = 0.001;
   initialized_ = false;
 
  }

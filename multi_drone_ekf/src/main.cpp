@@ -7,6 +7,8 @@
 
 #include "multi_drone_ekf/Ardrone.h"
 #include "multi_drone_ekf/Camera.h"
+#include "visualization_msgs/Marker.h"
+#include "visualization_msgs/MarkerArray.h"
 
 struct Marker {
 
@@ -100,6 +102,12 @@ int main(int argc, char **argv) {
     Camera camera(12);
 
 
+    ros::NodeHandle nh_;
+    ros::Publisher pub_markers;
+    pub_markers = nh_.advertise<visualization_msgs::Marker>( "ekf_marker", 1000);
+
+
+
     tf::TransformBroadcaster br;
 
     bool init = true;
@@ -144,6 +152,51 @@ int main(int argc, char **argv) {
             br.sendTransform(
                         tf::StampedTransform(drone_observer.state_pose_, ros::Time::now()/*nav_msg->header.stamp*/,
                                              "/zeta_marker", "/ardrone"));
+
+
+
+/*visualization of sigma
+
+            visualization_msgs::Marker marker;
+            int id = 0;
+
+
+            marker.header.frame_id = "/zeta_marker";
+
+            marker.action = visualization_msgs::Marker::ADD;
+            marker.ns = "ekf_marker_ns";
+            marker.header.stamp = ros::Time::now();
+            marker.pose.orientation.w = 1.0;
+            marker.scale.x = 0.05; // width of line in m
+            marker.color.a = 1.0;
+
+            const uint segs = 16;
+
+             // create circle
+             Eigen::Matrix<float,2,segs> xy;
+             for (uint j=0; j<segs; ++j){
+              xy(0,j) = cos(2*M_PI/segs*j);
+              xy(1,j) = sin(2*M_PI/segs*j);
+             }
+
+             Eigen::Matrix2f R; R << drone_observer.kalman_filter_.sigma_(0,0), drone_observer.kalman_filter_.sigma_(0,1) , drone_observer.kalman_filter_.sigma_(1,0) , drone_observer.kalman_filter_.sigma_(1,1);
+
+             xy = R*xy;
+
+             geometry_msgs::Point p;
+             marker.points.clear(); marker.colors.clear();
+             marker.type = visualization_msgs::Marker::LINE_STRIP;
+             marker.color.b = 1; marker.color.g = 0; marker.color.r = 0;
+             marker.id = id++;
+
+             for (uint j=0; j<segs; ++j){
+                 p.x = xy(0,j)+drone_observer.kalman_filter_.state_(0); p.y = xy(1,j)+drone_observer.kalman_filter_.state_(1); p.z = drone_observer.distZ_;
+              marker.points.push_back(p);
+             }
+//             marker.points.push_back(marker.points[0]);
+             pub_markers.publish(marker);
+
+*/
 
         }
 
