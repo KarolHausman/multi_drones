@@ -86,9 +86,6 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
                 measurement(5)= yaw;
 
 
-//                state_pose_.getBasis().getEulerYPR(yaw,pitch,roll);
-//                double z = state_pose_.getOrigin().getZ();
-
                 kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse(),roll_, pitch_, distZ_);
 
                 btQuaternion newRotation;
@@ -186,7 +183,7 @@ Ardrone::Ardrone(uint marker_nr) {
 
     btVector3 translation(0,0,-0.15);
     btQuaternion rotation;
-    rotation.setEulerZYX(-M_PI, 0,0);
+    rotation.setEulerZYX(0, 0,0);
 
     drone_in_marker_coord_.setOrigin(translation);
     drone_in_marker_coord_.setRotation(rotation);

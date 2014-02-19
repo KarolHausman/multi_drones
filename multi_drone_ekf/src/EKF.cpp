@@ -8,15 +8,51 @@
 #include "multi_drone_ekf/EKF.h"
 
 
+void ExtendedKalmanFilter::computeHJacobian(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat, Eigen::Matrix3f& dh)
+{
+
+    double c11,c12,c13,c21,c22,c23,m11,m12,m13,m21,m22,m23;
+    tf::Matrix3x3 c_rot = cam_to_world_flat.getBasis();
+    tf::Vector3 c_transl = cam_to_world_flat.getOrigin();
+
+    c11 = c_rot.getRow(0).getX(); c12 = c_rot.getRow(0).getY(); c13 = c_transl.getX();
+    c21 = c_rot.getRow(1).getX(); c22 = c_rot.getRow(1).getY(); c23 = c_transl.getY();
+
+
+    tf::Matrix3x3 m_rot = drone_to_marker_flat.getBasis();
+    tf::Vector3 m_transl = drone_to_marker_flat.getOrigin();
+    m11 = m_rot.getRow(0).getX(); m12 = m_rot.getRow(0).getY(); m13 = m_transl.getX();
+    m21 = m_rot.getRow(1).getX(); m22 = m_rot.getRow(1).getY(); m23 = m_transl.getY();
+
+
+
+    dh << c11,c12,m13*(c12*cos(state_(2)) - c11*sin(state_(2))) +
+             m23*(-(c11*cos(state_(2))) - c12*sin(state_(2))),
+           c21,c22,m13*(c22*cos(state_(2)) - c21*sin(state_(2))) +
+             m23*(-(c21*cos(state_(2))) - c22*sin(state_(2))),
+           0,0,((m11*(c22*cos(state_(2)) - c21*sin(state_(2))) +
+                  m21*(-(c21*cos(state_(2))) - c22*sin(state_(2))))/
+                (m21*(c12*cos(state_(2)) - c11*sin(state_(2))) + m11*(c11*cos(state_(2)) + c12*sin(state_(2)))) -
+               ((m11*(c12*cos(state_(2)) - c11*sin(state_(2))) + m21*(-(c11*cos(state_(2))) - c12*sin(state_(2))))*
+                  (m21*(c22*cos(state_(2)) - c21*sin(state_(2))) + m11*(c21*cos(state_(2)) + c22*sin(state_(2)))))/
+                pow(m21*(c12*cos(state_(2)) - c11*sin(state_(2))) + m11*(c11*cos(state_(2)) + c12*sin(state_(2))),
+                 2))/(1 + pow(m21*(c22*cos(state_(2)) - c21*sin(state_(2))) +
+                  m11*(c21*cos(state_(2)) + c22*sin(state_(2))),2)/
+                pow(m21*(c12*cos(state_(2)) - c11*sin(state_(2))) + m11*(c11*cos(state_(2)) + c12*sin(state_(2))),
+                 2));
+
+}
+
+
 void ExtendedKalmanFilter::init(const tf::Transform& world_to_drone_pose)
 {
-//    state_(0) = world_to_drone_pose.getOrigin().getX();
-//    state_(1) = world_to_drone_pose.getOrigin().getY();
-//    double yaw = 0;
-//    double pitch = 0;
-//    double roll = 0;
-//    world_to_drone_pose.getBasis().getEulerYPR(yaw, pitch, roll);
-//    state_(2) = yaw;
+    state_(0) = world_to_drone_pose.getOrigin().getX();
+    state_(1) = world_to_drone_pose.getOrigin().getY();
+    double yaw = 0;
+    double pitch = 0;
+    double roll = 0;
+    world_to_drone_pose.getBasis().getEulerYPR(yaw, pitch, roll);
+    state_(2) = yaw;
     initialized_ = true;
 
 }
@@ -48,8 +84,6 @@ void ExtendedKalmanFilter::predictionStep(const Eigen::Vector3f& odometry) {
             state_(2)) * odometry(0) - sin(state_(2)) * odometry(1), 0, 0, 1;
 
 
-//     std::cout << "G: " << std::endl << G << std::endl;
-
     sigma_ = G * sigma_ * G.transpose() + Q_;
 
 }
@@ -58,140 +92,64 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
     Eigen::Vector3f h;
 
-    tf::Transform state_pose;
-    btVector3 state_origin(state_(0),state_(1),z);
-    state_pose.setOrigin(state_origin);
-    btQuaternion state_quaternion;
-    state_quaternion.setEulerZYX(state_(2),pitch,roll);
-    state_pose.setRotation(state_quaternion);
 
 
-    tf::Transform H_transform;
-    H_transform = cam_to_world_transform*state_pose*drone_to_marker_transform;
-
-    double h_yaw = 0;
-    double h_pitch = 0;
-    double h_roll = 0;
-
-    H_transform.getBasis().getEulerYPR(h_yaw, h_pitch, h_roll);
-
-    h << H_transform.getOrigin().getX(),H_transform.getOrigin().getY(),h_yaw;
+    tf::Transform state_pose_flat;
+    btVector3 state_origin_flat(state_(0),state_(1),0);
+    state_pose_flat.setOrigin(state_origin_flat);
+    btQuaternion state_quaternion_flat;
+    state_quaternion_flat.setEulerZYX(state_(2),0,0);
+    state_pose_flat.setRotation(state_quaternion_flat);
 
 
-
-    tf::Matrix3x3 c_rot = cam_to_world_transform.getBasis();
-//    tf::Vector3 c_transl = cam_to_world_transform.getOrigin();
-
-    double c11,c12,/*c13,*/c21,c22,/*c23,*/c31,c32/*,c33,c41,c42,c43*/;
-
-    c11 = c_rot.getRow(0).getX(); c21 = c_rot.getRow(0).getY(); c31 = c_rot.getRow(0).getZ();
-    c12 = c_rot.getRow(1).getX(); c22 = c_rot.getRow(1).getY(); c32 = c_rot.getRow(1).getZ();
-//    c13 = c_rot.getRow(2).getX(); c23 = c_rot.getRow(2).getY(); c33 = c_rot.getRow(2).getZ();
-
-//    c41 = c_transl.getX();
-//    c42 = c_transl.getY();
-//    c43 = c_transl.getZ();
+    tf::Transform drone_to_marker_flat = drone_to_marker_transform;
+    double d_yaw = 0;
+    double d_pitch = 0;
+    double d_roll = 0;
+    drone_to_marker_flat.getBasis().getEulerYPR(d_yaw, d_pitch, d_roll);
+    btVector3 d2m_origin_flat(drone_to_marker_flat.getOrigin().getX(),drone_to_marker_flat.getOrigin().getY(),0);
+    drone_to_marker_flat.setOrigin(d2m_origin_flat);
+    btQuaternion d2m_quaternion_flat;
+    d2m_quaternion_flat.setEulerZYX(d_yaw,0,0);
+    drone_to_marker_flat.setRotation(d2m_quaternion_flat);
 
 
-    tf::Matrix3x3 m_rot = drone_to_marker_transform.getBasis();
-    tf::Vector3 m_transl = drone_to_marker_transform.getOrigin();
 
-    double m11,m12,m13,/*m21,m22,m23,m31,m32,m33.*/m41,m42,m43;
 
-    m11 = m_rot.getRow(0).getX(); /*m21 = m_rot.getRow(0).getY(); m31 = m_rot.getRow(0).getZ();*/
-    m12 = m_rot.getRow(1).getX(); /*m22 = m_rot.getRow(1).getY(); m32 = m_rot.getRow(1).getZ();*/
-    m13 = m_rot.getRow(2).getX(); /*m23 = m_rot.getRow(2).getY(); m33 = m_rot.getRow(2).getZ();*/
+    tf::Transform cam_to_world_flat;
+    double c_yaw = 0;
+    double c_pitch = 0;
+    double c_roll = 0;
+    cam_to_world_transform.inverse().getBasis().getEulerYPR(c_yaw,c_pitch,c_roll);
+    btVector3 c2w_origin_flat(cam_to_world_transform.inverse().getOrigin().getX(),cam_to_world_transform.inverse().getOrigin().getY(),0);
+    cam_to_world_flat.setOrigin(c2w_origin_flat);
+    btQuaternion c2w_quaternion_flat;
+    c2w_quaternion_flat.setEulerZYX(c_yaw,0,0);
+    cam_to_world_flat.setRotation(c2w_quaternion_flat);
 
-    m41 = m_transl.getX();
-    m42 = m_transl.getY();
-    m43 = m_transl.getZ();
+    cam_to_world_flat = cam_to_world_flat.inverse();
+    Eigen::Vector3f debug_cam;
+    debug_cam << cam_to_world_flat.getOrigin().getX(),cam_to_world_flat.getOrigin().getY(),tf::getYaw(cam_to_world_flat.getRotation());
+
+
+
+
+
+    tf::Transform h_transform_flat;
+
+    h_transform_flat = cam_to_world_flat*state_pose_flat*drone_to_marker_flat;
+
+    h << h_transform_flat.getOrigin().getX(), h_transform_flat.getOrigin().getY(), tf::getYaw(h_transform_flat.getRotation());
 
     Eigen::Matrix3f dh;
+
+
+
+    computeHJacobian(cam_to_world_flat, drone_to_marker_flat, dh);
+
+
+
     Eigen::Matrix3f K;
-
-//   dh<< c11,c21,m41*(c21*cos(pitch)*cos(state_(2)) - c11*cos(pitch)*sin(state_(2))) +
-//           m43*(c21*(cos(roll)*cos(state_(2))*sin(pitch) + sin(roll)*sin(state_(2))) + c11*(cos(state_(2))*sin(roll) - cos(roll)*sin(pitch)*sin(state_(2)))) +
-//           m42*(c21*(cos(state_(2))*sin(roll)*sin(pitch) - cos(roll)*sin(state_(2))) + c11*(-(cos(roll)*cos(state_(2))) - sin(roll)*sin(pitch)*sin(state_(2)))),
-//         c12,c22,m41*(c22*cos(pitch)*cos(state_(2)) - c12*cos(pitch)*sin(state_(2))) +
-//           m43*(c22*(cos(roll)*cos(state_(2))*sin(pitch) + sin(roll)*sin(state_(2))) + c12*(cos(state_(2))*sin(roll) - cos(roll)*sin(pitch)*sin(state_(2)))) +
-//           m42*(c22*(cos(state_(2))*sin(roll)*sin(pitch) - cos(roll)*sin(state_(2))) + c12*(-(cos(roll)*cos(state_(2))) - sin(roll)*sin(pitch)*sin(state_(2)))),
-//         0,0,(-(((m31*(c23*cos(pitch)*cos(state_(2)) - c13*cos(pitch)*sin(state_(2))) +
-//                    m33*(c23*(cos(roll)*cos(state_(2))*sin(pitch) + sin(roll)*sin(state_(2))) + c13*(cos(state_(2))*sin(roll) - cos(roll)*sin(pitch)*sin(state_(2)))) +
-//                    m32*(c23*(cos(state_(2))*sin(roll)*sin(pitch) - cos(roll)*sin(state_(2))) + c13*(-(cos(roll)*cos(state_(2))) - sin(roll)*sin(pitch)*sin(state_(2)))))*
-//                  (m21*(c13*cos(pitch)*cos(state_(2)) - c33*sin(pitch) + c23*cos(pitch)*sin(state_(2))) +
-//                    m23*(c33*cos(roll)*cos(pitch) + c13*(cos(roll)*cos(state_(2))*sin(pitch) + sin(roll)*sin(state_(2))) + c23*(-(cos(state_(2))*sin(roll)) + cos(roll)*sin(pitch)*sin(state_(2)))) +
-//                    m22*(c33*cos(pitch)*sin(roll) + c13*(cos(state_(2))*sin(roll)*sin(pitch) - cos(roll)*sin(state_(2))) + c23*(cos(roll)*cos(state_(2)) + sin(roll)*sin(pitch)*sin(state_(2))))))/
-//                pow(m31*(c13*cos(pitch)*cos(state_(2)) - c33*sin(pitch) + c23*cos(pitch)*sin(state_(2))) +
-//                  m33*(c33*cos(roll)*cos(pitch) + c13*(cos(roll)*cos(state_(2))*sin(pitch) + sin(roll)*sin(state_(2))) + c23*(-(cos(state_(2))*sin(roll)) + cos(roll)*sin(pitch)*sin(state_(2)))) +
-//                  m32*(c33*cos(pitch)*sin(roll) + c13*(cos(state_(2))*sin(roll)*sin(pitch) - cos(roll)*sin(state_(2))) + c23*(cos(roll)*cos(state_(2)) + sin(roll)*sin(pitch)*sin(state_(2)))),2)) +
-//             (m21*(c23*cos(pitch)*cos(state_(2)) - c13*cos(pitch)*sin(state_(2))) + m23*(c23*(cos(roll)*cos(state_(2))*sin(pitch) + sin(roll)*sin(state_(2))) +
-//                   c13*(cos(state_(2))*sin(roll) - cos(roll)*sin(pitch)*sin(state_(2)))) +
-//                m22*(c23*(cos(state_(2))*sin(roll)*sin(pitch) - cos(roll)*sin(state_(2))) + c13*(-(cos(roll)*cos(state_(2))) - sin(roll)*sin(pitch)*sin(state_(2)))))/
-//              (m31*(c13*cos(pitch)*cos(state_(2)) - c33*sin(pitch) + c23*cos(pitch)*sin(state_(2))) +
-//                m33*(c33*cos(roll)*cos(pitch) + c13*(cos(roll)*cos(state_(2))*sin(pitch) + sin(roll)*sin(state_(2))) + c23*(-(cos(state_(2))*sin(roll)) + cos(roll)*sin(pitch)*sin(state_(2)))) +
-//                m32*(c33*cos(pitch)*sin(roll) + c13*(cos(state_(2))*sin(roll)*sin(pitch) - cos(roll)*sin(state_(2))) + c23*(cos(roll)*cos(state_(2)) + sin(roll)*sin(pitch)*sin(state_(2))))))/
-//           (1 + pow(m21*(c13*cos(pitch)*cos(state_(2)) - c33*sin(pitch) + c23*cos(pitch)*sin(state_(2))) +
-//                m23*(c33*cos(roll)*cos(pitch) + c13*(cos(roll)*cos(state_(2))*sin(pitch) + sin(roll)*sin(state_(2))) + c23*(-(cos(state_(2))*sin(roll)) + cos(roll)*sin(pitch)*sin(state_(2)))) +
-//                m22*(c33*cos(pitch)*sin(roll) + c13*(cos(state_(2))*sin(roll)*sin(pitch) - cos(roll)*sin(state_(2))) + c23*(cos(roll)*cos(state_(2)) + sin(roll)*sin(pitch)*sin(state_(2)))),2)/
-//              pow(m31*(c13*cos(pitch)*cos(state_(2)) - c33*sin(pitch) + c23*cos(pitch)*sin(state_(2))) +
-//                m33*(c33*cos(roll)*cos(pitch) + c13*(cos(roll)*cos(state_(2))*sin(pitch) + sin(roll)*sin(state_(2))) + c23*(-(cos(state_(2))*sin(roll)) + cos(roll)*sin(pitch)*sin(state_(2)))) +
-//                m32*(c33*cos(pitch)*sin(roll) + c13*(cos(state_(2))*sin(roll)*sin(pitch) - cos(roll)*sin(state_(2))) + c23*(cos(roll)*cos(state_(2)) + sin(roll)*sin(pitch)*sin(state_(2)))),2));
-
-dh<< c11,c21,m41*cos(pitch)*(c21*cos(state_(2)) - c11*sin(state_(2))) +
-               sin(roll)*(c11*m43*cos(state_(2)) + c21*m42*cos(state_(2))*sin(pitch) + c21*m43*sin(state_(2)) -
-                  c11*m42*sin(pitch)*sin(state_(2))) -
-               cos(roll)*(cos(state_(2))*(c11*m42 - c21*m43*sin(pitch)) +
-                  (c21*m42 + c11*m43*sin(pitch))*sin(state_(2))),
-             c12,c22,m41*cos(pitch)*(c22*cos(state_(2)) - c12*sin(state_(2))) +
-               sin(roll)*(c12*m43*cos(state_(2)) + c22*m42*cos(state_(2))*sin(pitch) + c22*m43*sin(state_(2)) -
-                  c12*m42*sin(pitch)*sin(state_(2))) -
-               cos(roll)*(cos(state_(2))*(c12*m42 - c22*m43*sin(pitch)) +
-                  (c22*m42 + c12*m43*sin(pitch))*sin(state_(2))),
-             0,0,((-(c22*m13*cos(state_(2))*sin(roll)) - c32*m11*sin(pitch) +
-                    c12*m12*cos(state_(2))*sin(roll)*sin(pitch) + c12*m13*sin(roll)*sin(state_(2)) +
-                    c22*m12*sin(roll)*sin(pitch)*sin(state_(2)) +
-                    cos(pitch)*(c12*m11*cos(state_(2)) + c32*m12*sin(roll) + c22*m11*sin(state_(2))) +
-                    cos(roll)*(c32*m13*cos(pitch) + c22*m12*cos(state_(2)) + c12*m13*cos(state_(2))*sin(pitch) -
-                       c12*m12*sin(state_(2)) + c22*m13*sin(pitch)*sin(state_(2))))*
-                  (cos(pitch)*(-(c21*m11*cos(state_(2))) + c11*m11*sin(state_(2))) -
-                    sin(roll)*(c11*m13*cos(state_(2)) + c21*m12*cos(state_(2))*sin(pitch) + c21*m13*sin(state_(2)) -
-                       c11*m12*sin(pitch)*sin(state_(2))) +
-                    cos(roll)*(cos(state_(2))*(c11*m12 - c21*m13*sin(pitch)) +
-                       (c21*m12 + c11*m13*sin(pitch))*sin(state_(2)))) +
-                 (-(c21*m13*cos(state_(2))*sin(roll)) - c31*m11*sin(pitch) +
-                    c11*m12*cos(state_(2))*sin(roll)*sin(pitch) + c11*m13*sin(roll)*sin(state_(2)) +
-                    c21*m12*sin(roll)*sin(pitch)*sin(state_(2)) +
-                    cos(pitch)*(c11*m11*cos(state_(2)) + c31*m12*sin(roll) + c21*m11*sin(state_(2))) +
-                    cos(roll)*(c31*m13*cos(pitch) + c21*m12*cos(state_(2)) + c11*m13*cos(state_(2))*sin(pitch) -
-                       c11*m12*sin(state_(2)) + c21*m13*sin(pitch)*sin(state_(2))))*
-                  (m11*cos(pitch)*(c22*cos(state_(2)) - c12*sin(state_(2))) +
-                    sin(roll)*(c12*m13*cos(state_(2)) + c22*m12*cos(state_(2))*sin(pitch) + c22*m13*sin(state_(2)) -
-                       c12*m12*sin(pitch)*sin(state_(2))) -
-                    cos(roll)*(cos(state_(2))*(c12*m12 - c22*m13*sin(pitch)) +
-                       (c22*m12 + c12*m13*sin(pitch))*sin(state_(2)))))/
-               (pow(-(c21*m13*cos(state_(2))*sin(roll)) - c31*m11*sin(pitch) +
-                   c11*m12*cos(state_(2))*sin(roll)*sin(pitch) + c11*m13*sin(roll)*sin(state_(2)) +
-                   c21*m12*sin(roll)*sin(pitch)*sin(state_(2)) +
-                   cos(pitch)*(c11*m11*cos(state_(2)) + c31*m12*sin(roll) + c21*m11*sin(state_(2))) +
-                   cos(roll)*(c31*m13*cos(pitch) + c21*m12*cos(state_(2)) + c11*m13*cos(state_(2))*sin(pitch) -
-                      c11*m12*sin(state_(2)) + c21*m13*sin(pitch)*sin(state_(2))),2)*
-                 (1 + pow(-(c22*m13*cos(state_(2))*sin(roll)) - c32*m11*sin(pitch) +
-                      c12*m12*cos(state_(2))*sin(roll)*sin(pitch) + c12*m13*sin(roll)*sin(state_(2)) +
-                      c22*m12*sin(roll)*sin(pitch)*sin(state_(2)) +
-                      cos(pitch)*(c12*m11*cos(state_(2)) + c32*m12*sin(roll) + c22*m11*sin(state_(2))) +
-                      cos(roll)*(c32*m13*cos(pitch) + c22*m12*cos(state_(2)) +
-                         c12*m13*cos(state_(2))*sin(pitch) - c12*m12*sin(state_(2)) + c22*m13*sin(pitch)*sin(state_(2))
-                         ),2)/
-                    pow(-(c21*m13*cos(state_(2))*sin(roll)) - c31*m11*sin(pitch) +
-                      c11*m12*cos(state_(2))*sin(roll)*sin(pitch) + c11*m13*sin(roll)*sin(state_(2)) +
-                      c21*m12*sin(roll)*sin(pitch)*sin(state_(2)) +
-                      cos(pitch)*(c11*m11*cos(state_(2)) + c31*m12*sin(roll) + c21*m11*sin(state_(2))) +
-                      cos(roll)*(c31*m13*cos(pitch) + c21*m12*cos(state_(2)) +
-                         c11*m13*cos(state_(2))*sin(pitch) - c11*m12*sin(state_(2)) + c21*m13*sin(pitch)*sin(state_(2))
-                         ),2)));
-
-
-
 
 
     Eigen::Matrix3f brackets = dh * sigma_ * dh.transpose() + R_;
@@ -202,26 +160,17 @@ dh<< c11,c21,m41*cos(pitch)*(c21*cos(state_(2)) - c11*sin(state_(2))) +
 
     Eigen::Vector3f measurement_3dog = Eigen::Vector3f::Zero();
 
-    measurement_3dog(0) = measurement(0);
-    measurement_3dog(1) = measurement(1);
-    measurement_3dog(2) = measurement(5);
-//    reduceMeasurementDimensions(measurement, cam_to_world_transform.inverse(), drone_to_marker_transform.inverse(), measurement_3dog);
+
+    reduceMeasurementDimensions(measurement, cam_to_world_transform.inverse(), drone_to_marker_transform.inverse(), measurement_3dog);
 
     Eigen::Vector3f brackets2 = measurement_3dog - h;
     //normalize yaw angle
     brackets2(2) = atan2(sin(brackets2(2)), cos(brackets2(2)));
 
-//    std::cerr<<"measurement - h: "<<brackets2<<std::endl;
-
-    std::cout<<"h: "<<h<<std::endl;
-
-//    std::cout<<"K: "<<K<<std::endl;
 
 
 
-//    printState();
     state_ = state_ + K * brackets2;
-//    printState();
 
 
 }
@@ -233,6 +182,7 @@ void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& m
     double c_roll = 0;
 
     world_to_cam.getBasis().getEulerYPR(c_yaw,c_pitch,c_roll);
+
 
     double c_x =0;double c_y=0; //double c_z=0;
 
@@ -256,32 +206,52 @@ void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& m
 
     world_to_marker.getBasis().getEulerYPR(m_yaw,m_pitch,m_roll);
 
-    double m_x =0;double m_y=0; //double m_z=0;
+    double m_x =0;double m_y=0; double m_z=0;
 
     m_x = world_to_marker.getOrigin().getX();
     m_y = world_to_marker.getOrigin().getY();
-//    m_z = world_to_marker.getOrigin().getZ();
+    m_z = world_to_marker.getOrigin().getZ();
 
-    Eigen::Matrix3d c_3d;
-    Eigen::Matrix3d z_3d;
-    Eigen::Matrix3d m_3d;
+//    std::cout<<"world to marker: \n"<<"m_x= "<<m_x<<std::endl;
+//    std::cout<<"m_y= "<<m_y<<std::endl;
+//    std::cout<<"m_z= "<<m_z<<std::endl;
+//    std::cout<<"m_roll= "<<m_roll<<std::endl;
+//    std::cout<<"m_pitch= "<<m_pitch<<std::endl;
+//    std::cout<<"m_yaw= "<<m_yaw<<std::endl;
 
-    c_3d << cos(c_yaw),-sin(c_yaw),c_x,
-            sin(c_yaw),cos(c_yaw),c_y,
-            0,0,1;
+
+    tf::Transform c_3d,z_3d,m_3d;
+
+    tf::Vector3 c_3d_origin(c_x,c_y,0);
+    tf::Quaternion c_3d_rotation;
+    c_3d_rotation.setRPY(0,0,c_yaw);
+    c_3d.setOrigin(c_3d_origin);
+    c_3d.setRotation(c_3d_rotation);
 
 
-    m_3d << cos(m_yaw),-sin(m_yaw),m_x,
-            sin(m_yaw),cos(m_yaw),m_y,
-            0,0,1;
+
+    tf::Vector3 m_3d_origin(m_x,m_y,0);
+    tf::Quaternion m_3d_rotation;
+    m_3d_rotation.setRPY(0,0,m_yaw);
+    m_3d.setOrigin(m_3d_origin);
+    m_3d.setRotation(m_3d_rotation);
+
 
     z_3d = c_3d.inverse()*m_3d;
 
-    measurement_3dog(0) = z_3d(0,2);
-    measurement_3dog(1) = z_3d(1,2);
-    measurement_3dog(2) = atan2(z_3d(1,0),z_3d(0,0));
 
 
+//    tf::Transform m_3d_check = c_3d*z_3d;
+//    std::cout<<"m_3d: \n"<<tf::getYaw(m_3d.getRotation())<<std::endl;
+//    std::cout<<"m_3d check: \n"<<tf::getYaw(m_3d_check.getRotation())<<std::endl;
+
+
+    measurement_3dog(0) = z_3d.getOrigin().getX();
+    measurement_3dog(1) = z_3d.getOrigin().getY();
+    measurement_3dog(2) = tf::getYaw(z_3d.getRotation());
+
+//    std::cout<<"MEASUREMENT 6DOG: "<<measurement<<std::endl;
+//    std::cout<<"MEASUREMENT 3DOG: "<<measurement_3dog<<std::endl;
 
 
 }

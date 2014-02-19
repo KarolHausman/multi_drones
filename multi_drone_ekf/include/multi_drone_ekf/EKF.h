@@ -30,6 +30,9 @@ struct ExtendedKalmanFilter {
  Eigen::Matrix3f R_; // observation noise
  bool initialized_;
 
+ void computeHJacobian(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat, Eigen::Matrix3f& dh);
+
+
  void predictionStep(const Eigen::Vector3f& odometry); // x_{t+1} = g(x_t,u) and update uncertainty
 
  void correctionStep(const Eigen::Vector6f& measurement, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform, const double& roll, const double& pitch, const double& z); // compare expected and measured values, update state and uncertainty
@@ -48,7 +51,7 @@ struct ExtendedKalmanFilter {
   sigma_ = Eigen::Matrix3f::Zero(); sigma_(0,0) = sigma_(1,1) = 1; sigma_(2,2) = 1;
 
   Q_ = Eigen::Matrix3f::Zero();     Q_(0,0) = 0.2; Q_(1,1) = 0.2; Q_(2,2) = 0.02;
-  R_ = Eigen::Matrix3f::Zero();     R_(0,0) = R_(1,1) = 0.0001; R_(2,2) = 0.00001;
+  R_ = Eigen::Matrix3f::Zero();     R_(0,0) = R_(1,1) = 0.01; R_(2,2) = 0.001;
   initialized_ = false;
 
  }
