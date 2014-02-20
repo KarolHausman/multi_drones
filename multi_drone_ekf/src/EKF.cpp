@@ -116,7 +116,8 @@ void ExtendedKalmanFilter::predictionStep(const Eigen::VectorXd& odometry) {
 
 }
 
-void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform) { // compare expected and measured values, update state and uncertainty
+void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, const ranav::SensorModel &sensorModel, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform) { // compare expected and measured values, update state and uncertainty
+
 
 
 

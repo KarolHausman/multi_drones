@@ -30,5 +30,5 @@ protected:
 
 } /* namespace ranav */
 
-#endif /* SLIDERMOTIONMODEL_H_ */
+#endif /* ROTOR2DMOTIONMODEL_H_ */
 

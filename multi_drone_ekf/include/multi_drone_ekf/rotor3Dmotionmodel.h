@@ -22,4 +22,4 @@ protected:
 
 } /* namespace ranav */
 
-#endif /* SLIDERMOTIONMODEL_H_ */
+#endif /* ROTOR3DMOTIONMODEL_H_ */

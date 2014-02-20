@@ -86,7 +86,7 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
                 measurement(5)= yaw;
 
 
-                kalman_filter_->correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse());
+                kalman_filter_->correctionStep(measurement, sensorModel, world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse());
 
                 btQuaternion newRotation;
                 newRotation.setEulerZYX(kalman_filter_->state_(2), pitch_, roll_);
@@ -195,7 +195,6 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
 
 Ardrone::Ardrone(const uint& marker_nr) {
 
-//    motionModel =  new ranav::Rotor3dMotionModel;
     kalman_filter_ = new ExtendedKalmanFilter(&motionModel);
     btVector3 translation(0,0,-0.15);
     btQuaternion rotation;

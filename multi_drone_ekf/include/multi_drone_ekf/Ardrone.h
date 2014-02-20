@@ -20,6 +20,7 @@
 #include <Eigen/Core>
 #include <boost/bind.hpp>
 #include "multi_drone_ekf/rotor3Dmotionmodel.h"
+#include "multi_drone_ekf/marker2dsensormodel.h"
 
 
 
@@ -30,6 +31,7 @@ struct Ardrone {
     ros::Subscriber sub_tags_;
     ExtendedKalmanFilter* kalman_filter_;
     ranav::Rotor3dMotionModel motionModel;
+    ranav::Marker2dSensorModel sensorModel;
 
 
     tf::Transform tag_pose_;
