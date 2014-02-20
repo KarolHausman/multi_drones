@@ -30,8 +30,8 @@ public:
 protected:
   Eigen::MatrixXd H, W;
 //  TParam params;
-  unsigned int nA; //!< num agents
-  unsigned int nT; //!< num targets
+//  unsigned int nA; //!< num agents
+//  unsigned int nT; //!< num targets
   double measurementNoise;
   double distanceNoiseFactor;
   double visibilityRadius;

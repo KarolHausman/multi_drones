@@ -120,7 +120,7 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
 
 
-
+    sensorModel.sense(state_);
 
     tf::Transform state_pose_flat;
     btVector3 state_origin_flat(state_(0),state_(1),0);

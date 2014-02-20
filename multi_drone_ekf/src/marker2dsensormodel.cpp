@@ -7,9 +7,17 @@ namespace ranav {
 
 Marker2dSensorModel::Marker2dSensorModel()
 {
+    noiseCov = Eigen::MatrixXd::Identity(3,3);
+    noiseCovSqrt = Eigen::MatrixXd::Identity(3,3);
     stateDim = 3;
     measurementDim = 3;
-    noiseDim = 3;
+    noiseDim = 2;
+    H = Eigen::MatrixXd::Zero(3, 3);
+    W = Eigen::MatrixXd::Identity(3, 3);
+    visibilityRadius = 0.2;
+    measurementNoise = 0.01;
+    distanceNoiseFactor = 0.2;
+
 }
 
 Marker2dSensorModel::~Marker2dSensorModel() {
