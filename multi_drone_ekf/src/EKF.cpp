@@ -109,25 +109,35 @@ void ExtendedKalmanFilter::init(const tf::Transform& world_to_drone_pose)
 // x: distance travelled in local x-direction
 // y: distance travelled in local y-direction
 // yaw: rotation update
-void ExtendedKalmanFilter::predictionStep(const Eigen::Vector3f& odometry) {
+void ExtendedKalmanFilter::predictionStep(const Eigen::VectorXd& odometry) {
 
 
 
-
+/*
     state_(0) = state_(0) + cos(state_(2)) * odometry(0)
             - sin(state_(2)) * odometry(1);
     state_(1) = state_(1) + sin(state_(2)) * odometry(0)
             + cos(state_(2)) * odometry(1);
     state_(2) = state_(2) + odometry(2);
 
-    state_(2) = atan2(sin(state_(2)), cos(state_(2))); // normalize angle
+    state_(2) = atan2(sin(state_(2)), cos(state_(2)));*/ // normalize angle
+
+
+
+
+
+
+
+    state_ = motion_model_->move(state_,odometry);
 
     // dg/dx:
-    Eigen::Matrix3f G;
+    Eigen::MatrixXd G = Eigen::Matrix3d::Zero();
 
 
-    G << 1, 0, -sin(state_(2)) * odometry(0) - cos(state_(2)) * odometry(1), 0, 1, cos(
-            state_(2)) * odometry(0) - sin(state_(2)) * odometry(1), 0, 0, 1;
+
+//    G << 1, 0, -sin(state_(2)) * odometry(0) - cos(state_(2)) * odometry(1), 0, 1, cos(
+//            state_(2)) * odometry(0) - sin(state_(2)) * odometry(1), 0, 0, 1;
+    G = motion_model_->jacobianState(state_,odometry);
 
 
     sigma_ = G * sigma_ * G.transpose() + Q_;
@@ -136,7 +146,6 @@ void ExtendedKalmanFilter::predictionStep(const Eigen::Vector3f& odometry) {
 
 void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform) { // compare expected and measured values, update state and uncertainty
 
-    Eigen::Vector3f h;
 
 
 
@@ -185,7 +194,10 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
     h_transform_flat = cam_to_world_flat*state_pose_flat*drone_to_marker_flat;
 
+    Eigen::Vector3f h;
     h << h_transform_flat.getOrigin().getX(), h_transform_flat.getOrigin().getY(), tf::getYaw(h_transform_flat.getRotation());
+
+    /*
 
     Eigen::Matrix3f dh;
 
@@ -221,9 +233,9 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
     brackets2(2) = atan2(sin(brackets2(2)), cos(brackets2(2)));
 
 
+*/
 
-
-    state_ = state_ + K * brackets2;
+//    state_ = state_ + K * brackets2;
 
 
 }
