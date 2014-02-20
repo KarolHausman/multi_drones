@@ -5,7 +5,10 @@
 
 namespace ranav {
 
-Marker2dSensorModel::Marker2dSensorModel(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat)
+Marker2dSensorModel::Marker2dSensorModel()
+{}
+
+void Marker2dSensorModel::init(const tf::Transform &cam_to_world_flat, const tf::Transform &drone_to_marker_flat)
 {
     this->cam_to_world_flat = cam_to_world_flat;
     this->drone_to_marker_flat = drone_to_marker_flat;

@@ -5,17 +5,13 @@
 
 namespace ranav {
 
-Marker3dSensorModel::Marker3dSensorModel(const tf::Transform& cam_to_world, const tf::Transform& drone_to_marker):
-    Marker2dSensorModel(cam_to_world,drone_to_marker)
+Marker3dSensorModel::Marker3dSensorModel()
 {
     noiseCov = Eigen::MatrixXd::Identity(3,3);
     noiseCovPrime = Eigen::MatrixXd::Zero(6,6);
     noiseCovPrime(0,0) = noiseCovPrime(1,1) = noiseCovPrime(2,2) = 0.01;
     noiseCovPrime(3,3) = noiseCovPrime(4,4) = 0.01;
     noiseCovPrime(5,5) = 0.001;
-
-
-
     noiseCovSqrt = Eigen::MatrixXd::Identity(3,3);
     stateDim = 3;
     measurementDim = 3;
@@ -32,7 +28,7 @@ Marker3dSensorModel::~Marker3dSensorModel()
 }
 
 
-Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const Eigen::VectorXd& measurement, const tf::Transform& world_to_cam)
+Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const Eigen::VectorXd& measurement, const tf::Transform& world_to_cam) const
 {
     double c_yaw = 0;
     double c_pitch = 0;

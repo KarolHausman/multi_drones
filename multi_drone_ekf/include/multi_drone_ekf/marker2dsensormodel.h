@@ -11,11 +11,13 @@ namespace ranav {
 
 class Marker2dSensorModel : public SensorModel {
 public:
-  Marker2dSensorModel(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat);
+  Marker2dSensorModel();
 
   virtual ~Marker2dSensorModel();
 
   virtual bool measurementAvailable(const Eigen::VectorXd &state) const;
+
+  virtual void init(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat);
 
   //! returns the expected measurement given the state of MultiRotor2DMotionModel
   virtual Eigen::VectorXd sense(const Eigen::VectorXd &state, const Eigen::VectorXd &noise) const;

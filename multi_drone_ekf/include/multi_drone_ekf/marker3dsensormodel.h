@@ -7,10 +7,10 @@ namespace ranav {
 
 class Marker3dSensorModel : public Marker2dSensorModel {
 public:
-    Marker3dSensorModel(const tf::Transform& cam_to_world, const tf::Transform& drone_to_marker);
+    Marker3dSensorModel();
     virtual ~Marker3dSensorModel();
 
-    Eigen::VectorXd downProjectMeasurement(const Eigen::VectorXd& measurement, const tf::Transform& world_to_cam);
+    Eigen::VectorXd downProjectMeasurement(const Eigen::VectorXd& measurement, const tf::Transform& world_to_cam) const;
     void setNoiseCov(const tf::Transform& world_to_cam, const Eigen::VectorXd& measurement);
 
 

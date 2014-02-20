@@ -123,7 +123,8 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
 
 
-                sensorModel = new ranav::Marker3dSensorModel(cam_to_world_flat, drone_to_marker_flat);
+                sensorModel = new ranav::Marker3dSensorModel;
+                sensorModel->init(cam_to_world_flat, drone_to_marker_flat);
                 sensorModel->setNoiseCov(world_to_cam_transform_,measurement);
 
                 Eigen::VectorXd measurement_3dog = Eigen::Vector3d::Zero();
