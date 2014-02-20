@@ -32,4 +32,4 @@ rosbuild_genmsg()
 find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS})
 
-rosbuild_add_executable(multi_drone_ekf src/main.cpp src/EKF.cpp src/Ardrone.cpp src/Camera.cpp src/motionmodel.cpp src/random.cpp src/rotor2Dmotionmodel.cpp)
+rosbuild_add_executable(multi_drone_ekf src/main.cpp src/EKF.cpp src/Ardrone.cpp src/Camera.cpp src/motionmodel.cpp src/random.cpp src/rotor2Dmotionmodel.cpp src/sensormodel.cpp)

@@ -86,13 +86,13 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
                 measurement(5)= yaw;
 
 
-//                kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse());
+                kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse());
 
-//                btQuaternion newRotation;
-//                newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
-//                state_pose_.setRotation(newRotation);
-//                btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ_);
-//                state_pose_.setOrigin(newOrigin);
+                btQuaternion newRotation;
+                newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
+                state_pose_.setRotation(newRotation);
+                btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ_);
+                state_pose_.setOrigin(newOrigin);
             }
 
 

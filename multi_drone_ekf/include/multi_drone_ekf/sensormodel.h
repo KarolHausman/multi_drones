@@ -2,14 +2,14 @@
 #define SENSORMODEL_H_
 
 #include <Eigen/Core>
-#include "tparam.h"
+//#include "tparam.h"
 
 namespace ranav {
 
 class SensorModel {
 public:
   virtual ~SensorModel() {}
-  virtual void init(const TParam &p) = 0;
+//  virtual void init(const TParam &p) = 0;
 
   //! returns whether a measurement is available in the given state
   virtual bool measurementAvailable(const Eigen::VectorXd &state) const { return true; }

@@ -8,7 +8,7 @@ Rotor2dMotionModel::Rotor2dMotionModel() : dt(0) {
 
 
     A = Eigen::MatrixXd::Identity(2, 2);
-    B = Eigen::MatrixXd::Identity(2, 2)*dt;
+    B = Eigen::MatrixXd::Identity(2, 2);
     V = Eigen::MatrixXd::Zero(2, 2);
     noiseDim = 3;
     stateDim = 3;
@@ -18,22 +18,6 @@ Rotor2dMotionModel::Rotor2dMotionModel() : dt(0) {
 Rotor2dMotionModel::~Rotor2dMotionModel() {
 }
 
-//void Rotor2dMotionModel::init(const TParam &p) {
-//  stateDim = 6;
-//  controlDim = 2;
-//  noiseDim = 3;
-//  dt = p("estimation/motionDt").toDouble();
-//  gravity = p("rotor2d/gravity").toDouble();
-//  A = Eigen::MatrixXd::Identity(stateDim, stateDim);
-//  A.block(0, 3, 3, 3) = Eigen::MatrixXd::Identity(3, 3) * dt;
-//  B = Eigen::MatrixXd::Zero(stateDim, controlDim);
-//  B(5, 1) = dt;
-//  V = Eigen::MatrixXd::Zero(stateDim, noiseDim);
-//  V.block(3, 0, 3, 3) = Eigen::MatrixXd::Identity(3, 3) * dt;
-//  noiseCov.resize(noiseDim, noiseDim);
-//  noiseCov << 0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.001; // TODO: PARAM
-//  noiseCovSqrt = noiseCov.llt().matrixL();
-//}
 
 Eigen::VectorXd Rotor2dMotionModel::move(const Eigen::VectorXd &state, const Eigen::VectorXd &control, const Eigen::VectorXd &noise) const {
 
@@ -61,10 +45,7 @@ Eigen::MatrixXd Rotor2dMotionModel::jacobianState(const Eigen::VectorXd &state, 
 }
 
 Eigen::MatrixXd Rotor2dMotionModel::jacobianControl(const Eigen::VectorXd &state, const Eigen::VectorXd &, const Eigen::VectorXd &) const {
-  Eigen::MatrixXd result(B);
-//  result(3, 0) = -sin(state(2)) * dt;
-//  result(4, 0) = cos(state(2)) * dt;
-  return result;
+  return B;
 }
 
 Eigen::MatrixXd Rotor2dMotionModel::jacobianNoise(const Eigen::VectorXd &, const Eigen::VectorXd &, const Eigen::VectorXd &) const {
