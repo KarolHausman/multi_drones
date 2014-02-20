@@ -2,12 +2,17 @@
 #define MARKER2DSENSORMODEL_H_
 
 #include "multi_drone_ekf/sensormodel.h"
+#include <tf/transform_broadcaster.h>
+#include <ros/ros.h>
+
+
 
 namespace ranav {
 
 class Marker2dSensorModel : public SensorModel {
 public:
-  Marker2dSensorModel();
+  Marker2dSensorModel(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat);
+
   virtual ~Marker2dSensorModel();
 //  virtual void init(const TParam &p);
 
@@ -35,6 +40,8 @@ protected:
   double measurementNoise;
   double distanceNoiseFactor;
   double visibilityRadius;
+  tf::Transform cam_to_world_flat;
+  tf::Transform drone_to_marker_flat;
 };
 
 } /* namespace ranav */

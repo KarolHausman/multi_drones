@@ -7,7 +7,7 @@ namespace ranav {
 
 class Marker3dSensorModel : public Marker2dSensorModel {
 public:
-    Marker3dSensorModel();
+    Marker3dSensorModel(const tf::Transform& cam_to_world, const tf::Transform& drone_to_marker);
     virtual ~Marker3dSensorModel();
 
     Eigen::VectorXd downProjectMeasurement(const Eigen::VectorXd& measurement);

@@ -5,7 +5,8 @@
 
 namespace ranav {
 
-Marker3dSensorModel::Marker3dSensorModel()
+Marker3dSensorModel::Marker3dSensorModel(const tf::Transform& cam_to_world, const tf::Transform& drone_to_marker):
+    Marker2dSensorModel(cam_to_world,drone_to_marker)
 {
     noiseCov = Eigen::MatrixXd::Identity(3,3);
     noiseCovSqrt = Eigen::MatrixXd::Identity(3,3);

@@ -7,6 +7,7 @@
 
 #include "multi_drone_ekf/Ardrone.h"
 #include "multi_drone_ekf/Camera.h"
+#include "multi_drone_ekf/Ardronecontroller.h"
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
 
@@ -106,6 +107,11 @@ int main(int argc, char **argv) {
     Camera camera(camera_marker);
 
 
+    ArdroneController controller;
+
+
+
+
     ros::NodeHandle nh_;
     ros::Publisher pub_markers;
     pub_markers = nh_.advertise<visualization_msgs::Marker>( "ekf_marker", 1000);
@@ -156,6 +162,9 @@ int main(int argc, char **argv) {
             br.sendTransform(
                         tf::StampedTransform(drone_observer.state_pose_, ros::Time::now()/*nav_msg->header.stamp*/,
                                              "/zeta_marker", "/ardrone"));
+
+//            controller.setGoalPose(1, 1, 1, 0);
+//            controller.sendNewCommand(drone_observer.state_pose_.getOrigin().getX(),drone_observer.state_pose_.getOrigin().getY(),drone_observer.state_pose_.getOrigin().getZ(), tf::getYaw(drone_observer.state_pose_.getRotation()));
 
 
 

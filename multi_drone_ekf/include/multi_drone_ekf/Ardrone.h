@@ -24,6 +24,7 @@
 
 
 
+
 struct Ardrone {
 
 	ros::NodeHandle nh_;
@@ -31,7 +32,7 @@ struct Ardrone {
     ros::Subscriber sub_tags_;
     ExtendedKalmanFilter* kalman_filter_;
     ranav::Rotor3dMotionModel motionModel;
-    ranav::Marker2dSensorModel sensorModel;
+    ranav::SensorModel* sensorModel;
 
 
     tf::Transform tag_pose_;

@@ -2,13 +2,13 @@
 #include <Eigen/Cholesky>
 #include <iostream>
 #include "multi_drone_ekf/random.h"
-#include <ros/ros.h>
-#include <tf/transform_broadcaster.h>
 
 namespace ranav {
 
-Marker2dSensorModel::Marker2dSensorModel()
+Marker2dSensorModel::Marker2dSensorModel(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat)
 {
+    this->cam_to_world_flat = cam_to_world_flat;
+    this->drone_to_marker_flat = drone_to_marker_flat;
     noiseCov = Eigen::MatrixXd::Identity(3,3);
     noiseCovSqrt = Eigen::MatrixXd::Identity(3,3);
     stateDim = 3;
@@ -51,7 +51,7 @@ bool Marker2dSensorModel::measurementAvailable(const Eigen::VectorXd &state) con
     return true;
 }
 
-Eigen::VectorXd Marker2dSensorModel::sense(const Eigen::VectorXd &state, /*const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat,*/ const Eigen::VectorXd &noise) const {
+Eigen::VectorXd Marker2dSensorModel::sense(const Eigen::VectorXd &state, const Eigen::VectorXd &noise) const {
 
     tf::Transform state_pose_flat;
     btVector3 state_origin_flat(state(0),state(1),0);
@@ -64,7 +64,7 @@ Eigen::VectorXd Marker2dSensorModel::sense(const Eigen::VectorXd &state, /*const
 
     tf::Transform h_transform_flat;
 
-    h_transform_flat = /*cam_to_world_flat**/state_pose_flat/**drone_to_marker_flat*/;
+    h_transform_flat = cam_to_world_flat*state_pose_flat*drone_to_marker_flat;
 
     Eigen::VectorXd h(3);
     h << h_transform_flat.getOrigin().getX(), h_transform_flat.getOrigin().getY(), tf::getYaw(h_transform_flat.getRotation());

@@ -120,27 +120,29 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
 
 
-//    sensorModel.sense(state_);
 
 
 //    Eigen::Vector3f debug_cam;
 //    debug_cam << cam_to_world_flat.getOrigin().getX(),cam_to_world_flat.getOrigin().getY(),tf::getYaw(cam_to_world_flat.getRotation());
 
-    tf::Transform state_pose_flat;
-    btVector3 state_origin_flat(state_(0),state_(1),0);
-    state_pose_flat.setOrigin(state_origin_flat);
-    btQuaternion state_quaternion_flat;
-    state_quaternion_flat.setEulerZYX(state_(2),0,0);
-    state_pose_flat.setRotation(state_quaternion_flat);
+//    tf::Transform state_pose_flat;
+//    btVector3 state_origin_flat(state_(0),state_(1),0);
+//    state_pose_flat.setOrigin(state_origin_flat);
+//    btQuaternion state_quaternion_flat;
+//    state_quaternion_flat.setEulerZYX(state_(2),0,0);
+//    state_pose_flat.setRotation(state_quaternion_flat);
 
 
 
-    tf::Transform h_transform_flat;
+//    tf::Transform h_transform_flat;
 
-    h_transform_flat = cam_to_world_flat*state_pose_flat*drone_to_marker_flat;
+//    h_transform_flat = cam_to_world_flat*state_pose_flat*drone_to_marker_flat;
 
     Eigen::VectorXd h(3);
-    h << h_transform_flat.getOrigin().getX(), h_transform_flat.getOrigin().getY(), tf::getYaw(h_transform_flat.getRotation());
+
+    h = sensorModel.sense(state_);
+
+//    h << h_transform_flat.getOrigin().getX(), h_transform_flat.getOrigin().getY(), tf::getYaw(h_transform_flat.getRotation());
 
 
 
