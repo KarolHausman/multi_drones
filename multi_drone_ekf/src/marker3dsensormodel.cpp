@@ -1,7 +1,7 @@
 #include "multi_drone_ekf/marker3dsensormodel.h"
 #include <Eigen/Cholesky>
 #include <iostream>
-#include "multi_drone_ekf/random.h"
+//#include "multi_drone_ekf/random.h"
 
 namespace ranav {
 
@@ -17,6 +17,10 @@ Marker3dSensorModel::Marker3dSensorModel()
     visibilityRadius = 0.2;
     measurementNoise = 0.01;
     distanceNoiseFactor = 0.2;
+}
+
+Marker3dSensorModel::~Marker3dSensorModel()
+{
 }
 
 

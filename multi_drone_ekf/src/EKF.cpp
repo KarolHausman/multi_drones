@@ -116,11 +116,15 @@ void ExtendedKalmanFilter::predictionStep(const Eigen::VectorXd& odometry) {
 
 }
 
-void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, const ranav::SensorModel &sensorModel, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform) { // compare expected and measured values, update state and uncertainty
+void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, const ranav::SensorModel &sensorModel, const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform ) { // compare expected and measured values, update state and uncertainty
 
 
 
-    sensorModel.sense(state_);
+//    sensorModel.sense(state_);
+
+
+//    Eigen::Vector3f debug_cam;
+//    debug_cam << cam_to_world_flat.getOrigin().getX(),cam_to_world_flat.getOrigin().getY(),tf::getYaw(cam_to_world_flat.getRotation());
 
     tf::Transform state_pose_flat;
     btVector3 state_origin_flat(state_(0),state_(1),0);
@@ -128,38 +132,6 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
     btQuaternion state_quaternion_flat;
     state_quaternion_flat.setEulerZYX(state_(2),0,0);
     state_pose_flat.setRotation(state_quaternion_flat);
-
-
-    tf::Transform drone_to_marker_flat = drone_to_marker_transform;
-    double d_yaw = 0;
-    double d_pitch = 0;
-    double d_roll = 0;
-    drone_to_marker_flat.getBasis().getEulerYPR(d_yaw, d_pitch, d_roll);
-    btVector3 d2m_origin_flat(drone_to_marker_flat.getOrigin().getX(),drone_to_marker_flat.getOrigin().getY(),0);
-    drone_to_marker_flat.setOrigin(d2m_origin_flat);
-    btQuaternion d2m_quaternion_flat;
-    d2m_quaternion_flat.setEulerZYX(d_yaw,0,0);
-    drone_to_marker_flat.setRotation(d2m_quaternion_flat);
-
-
-
-
-    tf::Transform cam_to_world_flat;
-    double c_yaw = 0;
-    double c_pitch = 0;
-    double c_roll = 0;
-    cam_to_world_transform.inverse().getBasis().getEulerYPR(c_yaw,c_pitch,c_roll);
-    btVector3 c2w_origin_flat(cam_to_world_transform.inverse().getOrigin().getX(),cam_to_world_transform.inverse().getOrigin().getY(),0);
-    cam_to_world_flat.setOrigin(c2w_origin_flat);
-    btQuaternion c2w_quaternion_flat;
-    c2w_quaternion_flat.setEulerZYX(c_yaw,0,0);
-    cam_to_world_flat.setRotation(c2w_quaternion_flat);
-
-    cam_to_world_flat = cam_to_world_flat.inverse();
-    Eigen::Vector3f debug_cam;
-    debug_cam << cam_to_world_flat.getOrigin().getX(),cam_to_world_flat.getOrigin().getY(),tf::getYaw(cam_to_world_flat.getRotation());
-
-
 
 
 

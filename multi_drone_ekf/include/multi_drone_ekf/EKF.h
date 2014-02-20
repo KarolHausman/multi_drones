@@ -43,7 +43,10 @@ struct ExtendedKalmanFilter {
 
  void predictionStep(const Eigen::VectorXd& odometry); // x_{t+1} = g(x_t,u) and update uncertainty
 
- void correctionStep(const Eigen::Vector6f& measurement, const ranav::SensorModel &sensorModel, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform); // compare expected and measured values, update state and uncertainty
+// void correctionStep(const Eigen::Vector6f& measurement, const ranav::SensorModel &sensorModel, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform); // compare expected and measured values, update state and uncertainty
+ void correctionStep(const Eigen::Vector6f& measurement, const ranav::SensorModel &sensorModel, const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat, const tf::Transform& cam_to_world_transform, const tf::Transform& drone_to_marker_transform ); // compare expected and measured values, update state and uncertainty
+
+
 
  void reduceMeasurementDimensions (const Eigen::Vector6f& measurement, const tf::Transform& world_to_cam, const tf::Transform& marker_to_drone, Eigen::VectorXd& measurement_3dog);
 

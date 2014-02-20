@@ -86,7 +86,58 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
                 measurement(5)= yaw;
 
 
-                kalman_filter_->correctionStep(measurement, sensorModel, world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse());
+
+
+
+
+
+
+
+
+                tf::Transform drone_to_marker_transform = drone_in_marker_coord_.inverse();
+
+
+                tf::Transform drone_to_marker_flat = drone_to_marker_transform;
+                double d_yaw = 0;
+                double d_pitch = 0;
+                double d_roll = 0;
+                drone_to_marker_flat.getBasis().getEulerYPR(d_yaw, d_pitch, d_roll);
+                btVector3 d2m_origin_flat(drone_to_marker_flat.getOrigin().getX(),drone_to_marker_flat.getOrigin().getY(),0);
+                drone_to_marker_flat.setOrigin(d2m_origin_flat);
+                btQuaternion d2m_quaternion_flat;
+                d2m_quaternion_flat.setEulerZYX(d_yaw,0,0);
+                drone_to_marker_flat.setRotation(d2m_quaternion_flat);
+
+
+
+
+                tf::Transform cam_to_world_transform = world_to_cam_transform_.inverse();
+
+                tf::Transform cam_to_world_flat;
+                double c_yaw = 0;
+                double c_pitch = 0;
+                double c_roll = 0;
+                cam_to_world_transform.inverse().getBasis().getEulerYPR(c_yaw,c_pitch,c_roll);
+                btVector3 c2w_origin_flat(cam_to_world_transform.inverse().getOrigin().getX(),cam_to_world_transform.inverse().getOrigin().getY(),0);
+                cam_to_world_flat.setOrigin(c2w_origin_flat);
+                btQuaternion c2w_quaternion_flat;
+                c2w_quaternion_flat.setEulerZYX(c_yaw,0,0);
+                cam_to_world_flat.setRotation(c2w_quaternion_flat);
+
+                cam_to_world_flat = cam_to_world_flat.inverse();
+
+
+
+
+
+
+
+
+
+
+
+
+                kalman_filter_->correctionStep(measurement, sensorModel, cam_to_world_flat, drone_to_marker_flat, cam_to_world_transform, drone_to_marker_transform);
 
                 btQuaternion newRotation;
                 newRotation.setEulerZYX(kalman_filter_->state_(2), pitch_, roll_);

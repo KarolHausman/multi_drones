@@ -2,6 +2,8 @@
 #include <Eigen/Cholesky>
 #include <iostream>
 #include "multi_drone_ekf/random.h"
+#include <ros/ros.h>
+#include <tf/transform_broadcaster.h>
 
 namespace ranav {
 
@@ -49,14 +51,28 @@ bool Marker2dSensorModel::measurementAvailable(const Eigen::VectorXd &state) con
     return true;
 }
 
-Eigen::VectorXd Marker2dSensorModel::sense(const Eigen::VectorXd &state, const Eigen::VectorXd &noise) const {
-//  Eigen::VectorXd from = Eigen::VectorXd::Zero(2);
-//  Eigen::VectorXd to = Eigen::VectorXd::Zero(2);
-//  if (toId >= 0)
-//    to = state.segment(2*toId, 2);
-//  if (fromId >= 0)
-//    from = state.segment(2*fromId, 2);
-//  return to - from;
+Eigen::VectorXd Marker2dSensorModel::sense(const Eigen::VectorXd &state, /*const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat,*/ const Eigen::VectorXd &noise) const {
+
+    tf::Transform state_pose_flat;
+    btVector3 state_origin_flat(state(0),state(1),0);
+    state_pose_flat.setOrigin(state_origin_flat);
+    btQuaternion state_quaternion_flat;
+    state_quaternion_flat.setEulerZYX(state(2),0,0);
+    state_pose_flat.setRotation(state_quaternion_flat);
+
+
+
+    tf::Transform h_transform_flat;
+
+    h_transform_flat = /*cam_to_world_flat**/state_pose_flat/**drone_to_marker_flat*/;
+
+    Eigen::VectorXd h(3);
+    h << h_transform_flat.getOrigin().getX(), h_transform_flat.getOrigin().getY(), tf::getYaw(h_transform_flat.getRotation());
+
+    return h;
+
+
+
 }
 
 Eigen::VectorXd Marker2dSensorModel::sampleNoise(const Eigen::VectorXd &state, const Eigen::VectorXd &measurement) const {
