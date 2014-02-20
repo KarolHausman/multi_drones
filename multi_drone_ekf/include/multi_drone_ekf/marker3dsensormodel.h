@@ -10,16 +10,14 @@ public:
     Marker3dSensorModel(const tf::Transform& cam_to_world, const tf::Transform& drone_to_marker);
     virtual ~Marker3dSensorModel();
 
-    Eigen::VectorXd downProjectMeasurement(const Eigen::VectorXd& measurement);
-    void setNoiseCov(const Eigen::MatrixXd& noise_6dog);
+    Eigen::VectorXd downProjectMeasurement(const Eigen::VectorXd& measurement, const tf::Transform& world_to_cam);
+    void setNoiseCov(const tf::Transform& world_to_cam, const Eigen::VectorXd& measurement);
 
 
 
 protected:
-    Eigen::MatrixXd H, W;
-    //  TParam params;
-    //  unsigned int nA; //!< num agents
-    //  unsigned int nT; //!< num targets
+    Eigen::MatrixXd H, W, noiseCovPrime;
+
     double measurementNoise;
     double distanceNoiseFactor;
     double visibilityRadius;

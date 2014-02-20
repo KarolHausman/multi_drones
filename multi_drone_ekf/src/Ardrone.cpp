@@ -72,7 +72,7 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
             if(initialized_)
             {
-                Eigen::Vector6f measurement;
+                Eigen::VectorXd measurement(6);
                 measurement(0) = tag_pose_.getOrigin().getX();
                 measurement(1) = tag_pose_.getOrigin().getY();
                 measurement(2) = tag_pose_.getOrigin().getZ();
@@ -84,12 +84,6 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
                 measurement(3)= roll;
                 measurement(4)= pitch;
                 measurement(5)= yaw;
-
-
-
-
-
-
 
 
 
@@ -126,9 +120,16 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
                 cam_to_world_flat = cam_to_world_flat.inverse();
 
-                sensorModel = new ranav::Marker3dSensorModel(cam_to_world_flat, drone_to_marker_flat);
 
-                kalman_filter_->correctionStep(measurement, *sensorModel, cam_to_world_flat, drone_to_marker_flat, cam_to_world_transform, drone_to_marker_transform);
+
+
+                sensorModel = new ranav::Marker3dSensorModel(cam_to_world_flat, drone_to_marker_flat);
+                sensorModel->setNoiseCov(world_to_cam_transform_,measurement);
+
+                Eigen::VectorXd measurement_3dog = Eigen::Vector3d::Zero();
+                measurement_3dog = sensorModel->downProjectMeasurement(measurement, world_to_cam_transform_);
+
+                kalman_filter_->correctionStep(measurement_3dog, *sensorModel);
 
                 btQuaternion newRotation;
                 newRotation.setEulerZYX(kalman_filter_->state_(2), pitch_, roll_);
@@ -182,7 +183,7 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
 
     Eigen::VectorXd odometry;
 
-    odometry = Eigen::Vector6d::Zero();
+    odometry = Eigen::VectorXd::Zero(6);
 
     odometry(0) = distX; // local position update
     odometry(1) = distY; // local position update

@@ -14,7 +14,6 @@ public:
   Marker2dSensorModel(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat);
 
   virtual ~Marker2dSensorModel();
-//  virtual void init(const TParam &p);
 
   virtual bool measurementAvailable(const Eigen::VectorXd &state) const;
 
@@ -34,9 +33,7 @@ public:
 
 protected:
   Eigen::MatrixXd H, W;
-//  TParam params;
-//  unsigned int nA; //!< num agents
-//  unsigned int nT; //!< num targets
+
   double measurementNoise;
   double distanceNoiseFactor;
   double visibilityRadius;
