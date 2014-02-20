@@ -104,6 +104,7 @@ void ExtendedKalmanFilter::init(const Eigen::VectorXd& mean_init)
 // yaw: rotation update
 void ExtendedKalmanFilter::predictionStep(const Eigen::VectorXd& odometry) {
 
+
     state_ = motion_model_->move(state_,odometry);
 
     // dg/dx:

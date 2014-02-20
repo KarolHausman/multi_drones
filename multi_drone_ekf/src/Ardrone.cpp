@@ -118,6 +118,8 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
     if (prevTime_ == 0) {
         prevTime_ = nav_msg->header.stamp.toSec();
         dt = (double) 1 / 14;
+        last_roll_ = (nav_msg->rotX) / (180.0 / M_PI);
+        last_pitch_ = (nav_msg->rotY) / (180.0 / M_PI);
         last_yaw_ = (nav_msg->rotZ) / (180.0 / M_PI);
     } else {
         dt = (nav_msg->header.stamp.toSec() - prevTime_);
@@ -138,14 +140,20 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
 
     Eigen::VectorXd odometry;
 
-    odometry = Eigen::Vector3d::Zero();
+    odometry = Eigen::Vector6d::Zero();
 
     odometry(0) = distX; // local position update
     odometry(1) = distY; // local position update
-    odometry(2) = (yaw_ - last_yaw_) /*/ 180 * M_PI*/; // treat absolute value as incremental update
+    odometry(2) = distZ_ /*/ 180 * M_PI*/; // treat absolute value as incremental update
+    odometry(3) = (roll_ - last_roll_)/*/ 180 * M_PI*/; // treat absolute value as incremental update
+    odometry(4) = (pitch_ - last_pitch_)  /*/ 180 * M_PI*/; // treat absolute value as incremental update
+    odometry(5) = (yaw_ - last_yaw_) /*/ 180 * M_PI*/; // treat absolute value as incremental update
 
 
     last_yaw_ = yaw_;
+    last_roll_ = roll_;
+    last_pitch_ = pitch_;
+
 
 
 
@@ -167,7 +175,7 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
         }
 
 
-        kalman_filter_->predictionStep(odometry);
+        kalman_filter_->predictionStep(motionModel.downProjectControl(odometry));
 
 
         btQuaternion newRotation;
@@ -185,9 +193,10 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
 
 
 
-Ardrone::Ardrone(const uint& marker_nr,ranav::MotionModel *m) {
+Ardrone::Ardrone(const uint& marker_nr) {
 
-    kalman_filter_ = new ExtendedKalmanFilter(m);
+//    motionModel =  new ranav::Rotor3dMotionModel;
+    kalman_filter_ = new ExtendedKalmanFilter(&motionModel);
     btVector3 translation(0,0,-0.15);
     btQuaternion rotation;
     rotation.setEulerZYX(0, 0,0);

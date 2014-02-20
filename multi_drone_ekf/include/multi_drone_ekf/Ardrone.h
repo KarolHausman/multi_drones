@@ -19,7 +19,7 @@
 #include "multi_drone_ekf/Tags.h"
 #include <Eigen/Core>
 #include <boost/bind.hpp>
-#include "multi_drone_ekf/motionmodel.h"
+#include "multi_drone_ekf/rotor3Dmotionmodel.h"
 
 
 
@@ -29,6 +29,7 @@ struct Ardrone {
     ros::Subscriber sub_nav_;
     ros::Subscriber sub_tags_;
     ExtendedKalmanFilter* kalman_filter_;
+    ranav::Rotor3dMotionModel motionModel;
 
 
     tf::Transform tag_pose_;
@@ -38,7 +39,7 @@ struct Ardrone {
     bool navCB_done_;
     tf::Transform odom_pose_;
     double prevTime_;
-    double last_yaw_;
+    double last_yaw_, last_roll_, last_pitch_;
     bool initialized_;
     double distZ_;
     tf::Transform state_pose_;
@@ -56,7 +57,7 @@ struct Ardrone {
 
     void navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg);
 
-    Ardrone(const uint& marker_nr, ranav::MotionModel *m);
+    Ardrone(const uint& marker_nr);
 
 };
 

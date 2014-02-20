@@ -9,7 +9,6 @@
 #include "multi_drone_ekf/Camera.h"
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
-#include "multi_drone_ekf/rotor2Dmotionmodel.h"
 
 
 struct Marker {
@@ -100,9 +99,8 @@ struct Marker {
 int main(int argc, char **argv) {
     ros::init(argc, argv, "multi_drone_ekf");
 
-    ranav::Rotor2dMotionModel motionModel;
     int drone_marker = 1;
-    Ardrone drone_observer(drone_marker,&motionModel);
+    Ardrone drone_observer(drone_marker);
 
     int camera_marker = 12;
     Camera camera(camera_marker);

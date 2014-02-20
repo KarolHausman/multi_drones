@@ -23,7 +23,7 @@ public:
   using MotionModel::jacobianNoise;
 
 protected:
-  Eigen::MatrixXd A, B, V, Q;
+  Eigen::MatrixXd A, B, V;
   double dt;
   double gravity;
 };
