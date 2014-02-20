@@ -29,12 +29,12 @@ void ArdroneController::setParameter(const float& c_proportional, const float& c
 ArdroneController::ArdroneController()
 {
     pub_vel = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
-    pid_x.c_proportional = pid_y.c_proportional = pid_z.c_proportional = 1.2;
+    pid_x.c_proportional = pid_y.c_proportional = pid_z.c_proportional = 0.5;
     pid_x.c_integral = pid_y.c_integral = pid_z.c_integral = 1.4;
-    pid_x.c_derivative = pid_y.c_derivative = pid_z.c_derivative = 1.6;
+    pid_x.c_derivative = pid_y.c_derivative = pid_z.c_derivative = 0.6;
 
 
-    pid_yaw.c_proportional = 0.5;
+    pid_yaw.c_proportional = 0.1;
     pid_yaw.c_integral = 0.7;
     pid_yaw.c_derivative = 0.9;
 
@@ -46,7 +46,8 @@ ArdroneController::ArdroneController()
 // use this to set a new goal pose for the controller
 void ArdroneController::setGoalPose(float x, float y, float height, float yaw) {
     x_goal = x;
-    y_goal = y, height_goal = height;
+    y_goal = y;
+    height_goal = height;
     yaw_goal = yaw;
 }
 
@@ -63,11 +64,11 @@ void ArdroneController::sendNewCommand(const float& position_x, const float& pos
     position.setZ(height_goal - position_z);
     position = position * rotationMatrix;
 
-    std::cout<<"height goal: "<<height_goal<<std::endl;
+//    std::cout<<"height goal: "<<height_goal<<std::endl;
     twist.linear.x = pid_x.getCommand(position.getX(), now); // velocity_x_in_LOCAL_Frame;
     twist.linear.y = pid_y.getCommand(position.getY(), now); // velocity_y_in_LOCAL_Frame;
     twist.linear.z = pid_z.getCommand(position.getZ(), now);
-    twist.angular.z = pid_yaw.getCommand(yaw_goal - position_yaw, now); // normalize angle..
+//    twist.angular.z = pid_yaw.getCommand(yaw_goal - position_yaw, now); // normalize angle..
 
     pub_vel.publish(twist);
 }
