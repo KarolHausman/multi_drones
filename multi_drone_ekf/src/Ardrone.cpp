@@ -86,12 +86,12 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
                 measurement(5)= yaw;
 
 
-                kalman_filter_.correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse());
+                kalman_filter_->correctionStep(measurement,world_to_cam_transform_.inverse(),drone_in_marker_coord_.inverse());
 
                 btQuaternion newRotation;
-                newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
+                newRotation.setEulerZYX(kalman_filter_->state_(2), pitch_, roll_);
                 state_pose_.setRotation(newRotation);
-                btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ_);
+                btVector3 newOrigin(kalman_filter_->state_(0),kalman_filter_->state_(1),distZ_);
                 state_pose_.setOrigin(newOrigin);
             }
 
@@ -103,7 +103,6 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
 
 void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
-    double dt;
 
     ROS_INFO_STREAM(
                 "------------------------------------------ \n"
@@ -115,6 +114,7 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
 
 
 
+    double dt;
     if (prevTime_ == 0) {
         prevTime_ = nav_msg->header.stamp.toSec();
         dt = (double) 1 / 14;
@@ -151,24 +151,30 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
 
     if(initialized_)
     {
-        if(!kalman_filter_.initialized_)
+        if(!kalman_filter_->initialized_)
         {
-            kalman_filter_.init(world_to_drone_pose_);
+            Eigen::Vector3d mean_init(3);
+
+            mean_init(0) = world_to_drone_pose_.getOrigin().getX();
+            mean_init(1) = world_to_drone_pose_.getOrigin().getY();
+            double yaw = 0;
+            double pitch = 0;
+            double roll = 0;
+            world_to_drone_pose_.getBasis().getEulerYPR(yaw, pitch, roll);
+            mean_init(2) = yaw;
+
+            kalman_filter_->init(mean_init);
         }
 
 
-        kalman_filter_.predictionStep(odometry);
+        kalman_filter_->predictionStep(odometry);
 
 
         btQuaternion newRotation;
-        newRotation.setEulerZYX(kalman_filter_.state_(2), pitch_, roll_);
+        newRotation.setEulerZYX(kalman_filter_->state_(2), pitch_, roll_);
         state_pose_.setRotation(newRotation);
-        btVector3 newOrigin(kalman_filter_.state_(0),kalman_filter_.state_(1),distZ_);
+        btVector3 newOrigin(kalman_filter_->state_(0),kalman_filter_->state_(1),distZ_);
         state_pose_.setOrigin(newOrigin);
-
-
-
-
 
     }
 
@@ -179,9 +185,9 @@ void Ardrone::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg) {
 
 
 
-Ardrone::Ardrone(uint marker_nr) {
+Ardrone::Ardrone(const uint& marker_nr,ranav::MotionModel *m) {
 
-
+    kalman_filter_ = new ExtendedKalmanFilter(m);
     btVector3 translation(0,0,-0.15);
     btQuaternion rotation;
     rotation.setEulerZYX(0, 0,0);

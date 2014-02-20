@@ -7,7 +7,7 @@
 
 #include "multi_drone_ekf/EKF.h"
 
-void ExtendedKalmanFilter::computeHprimeJacobian (const tf::Transform& world_to_cam_flat, const Eigen::Vector6f& measurement, Eigen::MatrixXf& dh_prime)
+void ExtendedKalmanFilter::computeHprimeJacobian (const tf::Transform& world_to_cam_flat, const Eigen::Vector6f& measurement, Eigen::MatrixXd& dh_prime)
 {
 
     //pitch and roll of the measurement
@@ -54,7 +54,7 @@ void ExtendedKalmanFilter::computeHprimeJacobian (const tf::Transform& world_to_
 
 
 
-void ExtendedKalmanFilter::computeHJacobian(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat, Eigen::Matrix3f& dh)
+void ExtendedKalmanFilter::computeHJacobian(const tf::Transform& cam_to_world_flat, const tf::Transform& drone_to_marker_flat, Eigen::MatrixXd& dh)
 {
 
     double c11,c12,/*c13,*/c21,c22,/*c23,*/m11,/*m12,*/m13,m21,/*m22,*/m23;
@@ -90,17 +90,10 @@ void ExtendedKalmanFilter::computeHJacobian(const tf::Transform& cam_to_world_fl
 }
 
 
-void ExtendedKalmanFilter::init(const tf::Transform& world_to_drone_pose)
+void ExtendedKalmanFilter::init(const Eigen::VectorXd& mean_init)
 {
-    state_(0) = world_to_drone_pose.getOrigin().getX();
-    state_(1) = world_to_drone_pose.getOrigin().getY();
-    double yaw = 0;
-    double pitch = 0;
-    double roll = 0;
-    world_to_drone_pose.getBasis().getEulerYPR(yaw, pitch, roll);
-    state_(2) = yaw;
+    state_ = mean_init;
     initialized_ = true;
-
 }
 
 
@@ -111,36 +104,14 @@ void ExtendedKalmanFilter::init(const tf::Transform& world_to_drone_pose)
 // yaw: rotation update
 void ExtendedKalmanFilter::predictionStep(const Eigen::VectorXd& odometry) {
 
-
-
-/*
-    state_(0) = state_(0) + cos(state_(2)) * odometry(0)
-            - sin(state_(2)) * odometry(1);
-    state_(1) = state_(1) + sin(state_(2)) * odometry(0)
-            + cos(state_(2)) * odometry(1);
-    state_(2) = state_(2) + odometry(2);
-
-    state_(2) = atan2(sin(state_(2)), cos(state_(2)));*/ // normalize angle
-
-
-
-
-
-
-
     state_ = motion_model_->move(state_,odometry);
 
     // dg/dx:
     Eigen::MatrixXd G = Eigen::Matrix3d::Zero();
-
-
-
-//    G << 1, 0, -sin(state_(2)) * odometry(0) - cos(state_(2)) * odometry(1), 0, 1, cos(
-//            state_(2)) * odometry(0) - sin(state_(2)) * odometry(1), 0, 0, 1;
     G = motion_model_->jacobianState(state_,odometry);
 
 
-    sigma_ = G * sigma_ * G.transpose() + Q_;
+    sigma_ = G * sigma_ * G.transpose() + motion_model_->getNoiseCov(state_,odometry);
 
 }
 
@@ -194,12 +165,12 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
     h_transform_flat = cam_to_world_flat*state_pose_flat*drone_to_marker_flat;
 
-    Eigen::Vector3f h;
+    Eigen::VectorXd h(3);
     h << h_transform_flat.getOrigin().getX(), h_transform_flat.getOrigin().getY(), tf::getYaw(h_transform_flat.getRotation());
 
-    /*
 
-    Eigen::Matrix3f dh;
+
+    Eigen::MatrixXd dh(3,3);
 
 
 
@@ -207,20 +178,20 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
 
 
-    Eigen::Matrix3f K;
+    Eigen::MatrixXd K(3,3);
 
-    Eigen::MatrixXf dh_prime(3,6);
+    Eigen::MatrixXd dh_prime(3,6);
     computeHprimeJacobian(cam_to_world_flat.inverse(),measurement,dh_prime);
 
     R_=dh_prime*R_prime_*dh_prime.transpose();
 
-    Eigen::Matrix3f brackets = dh * sigma_ * dh.transpose() + R_;
+    Eigen::MatrixXd brackets = dh * sigma_ * dh.transpose() + R_;
 
     K = sigma_ * dh.transpose() * brackets.inverse();
 
-    sigma_ = (Eigen::Matrix3f::Identity() - K * dh) * sigma_;
+    sigma_ = (Eigen::Matrix3d::Identity() - K * dh) * sigma_;
 
-    Eigen::Vector3f measurement_3dog = Eigen::Vector3f::Zero();
+    Eigen::VectorXd measurement_3dog = Eigen::Vector3d::Zero();
 
 
     reduceMeasurementDimensions(measurement, cam_to_world_transform.inverse(), drone_to_marker_transform.inverse(), measurement_3dog);
@@ -228,21 +199,20 @@ void ExtendedKalmanFilter::correctionStep(const Eigen::Vector6f& measurement, co
 
 
 
-    Eigen::Vector3f brackets2 = measurement_3dog - h;
+    Eigen::VectorXd brackets2 = measurement_3dog - h;
     //normalize yaw angle
     brackets2(2) = atan2(sin(brackets2(2)), cos(brackets2(2)));
 
 
-*/
 
-//    state_ = state_ + K * brackets2;
+    state_ = state_ + K * brackets2;
 
 
 }
 
 
 
-void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& measurement, const tf::Transform& world_to_cam, const tf::Transform& marker_to_drone, Eigen::Vector3f& measurement_3dog)
+void ExtendedKalmanFilter::reduceMeasurementDimensions (const Eigen::Vector6f& measurement, const tf::Transform& world_to_cam, const tf::Transform& marker_to_drone, Eigen::VectorXd& measurement_3dog)
 {
     double c_yaw = 0;
     double c_pitch = 0;

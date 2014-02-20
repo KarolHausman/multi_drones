@@ -10,6 +10,11 @@ Rotor2dMotionModel::Rotor2dMotionModel() : dt(0) {
     A = Eigen::MatrixXd::Identity(2, 2);
     B = Eigen::MatrixXd::Identity(2, 2);
     V = Eigen::MatrixXd::Zero(2, 2);
+    noiseCov = Eigen::MatrixXd::Zero(3, 3);
+    noiseCov(0,0) = 0.02;
+    noiseCov(1,1) = 0.02;
+    noiseCov(2,2) = 0.002;
+
     noiseDim = 3;
     stateDim = 3;
     controlDim = 3;
