@@ -81,7 +81,7 @@ Eigen::VectorXd Marker2dSensorModel::sampleNoise(const Eigen::VectorXd &state, c
 
 Eigen::MatrixXd Marker2dSensorModel::getNoiseCov(const Eigen::VectorXd &state, const Eigen::VectorXd &measurement) const {
 //  if (fromId < 0)
-//    return noiseCov;
+    return noiseCov;
 //  double dist = measurement.norm();
 //  return noiseCov + Eigen::MatrixXd::Identity(noiseDim, noiseDim) * measurementNoise * distanceNoiseFactor * pow(dist, 4);
 }
@@ -94,8 +94,41 @@ double Marker2dSensorModel::getInformation(const Eigen::VectorXd &state, const E
 //  return 1/sqrt(noise);
 }
 
-Eigen::MatrixXd Marker2dSensorModel::jacobianState(const Eigen::VectorXd &state, const Eigen::VectorXd &) const {
-  return H;
+Eigen::MatrixXd Marker2dSensorModel::jacobianState(const Eigen::VectorXd &state, const Eigen::VectorXd &) const
+{
+    double c11,c12,/*c13,*/c21,c22,/*c23,*/m11,/*m12,*/m13,m21,/*m22,*/m23;
+    tf::Matrix3x3 c_rot = cam_to_world_flat.getBasis();
+//    tf::Vector3 c_transl = cam_to_world_flat.getOrigin();
+
+    c11 = c_rot.getRow(0).getX(); c12 = c_rot.getRow(0).getY(); //c13 = c_transl.getX();
+    c21 = c_rot.getRow(1).getX(); c22 = c_rot.getRow(1).getY(); //c23 = c_transl.getY();
+
+
+    tf::Matrix3x3 m_rot = drone_to_marker_flat.getBasis();
+    tf::Vector3 m_transl = drone_to_marker_flat.getOrigin();
+    m11 = m_rot.getRow(0).getX();/* m12 = m_rot.getRow(0).getY();*/ m13 = m_transl.getX();
+    m21 = m_rot.getRow(1).getX();/* m22 = m_rot.getRow(1).getY();*/ m23 = m_transl.getY();
+
+    Eigen::MatrixXd dh(3,3);
+
+
+    dh << c11,c12,m13*(c12*cos(state(2)) - c11*sin(state(2))) +
+             m23*(-(c11*cos(state(2))) - c12*sin(state(2))),
+           c21,c22,m13*(c22*cos(state(2)) - c21*sin(state(2))) +
+             m23*(-(c21*cos(state(2))) - c22*sin(state(2))),
+           0,0,((m11*(c22*cos(state(2)) - c21*sin(state(2))) +
+                  m21*(-(c21*cos(state(2))) - c22*sin(state(2))))/
+                (m21*(c12*cos(state(2)) - c11*sin(state(2))) + m11*(c11*cos(state(2)) + c12*sin(state(2)))) -
+               ((m11*(c12*cos(state(2)) - c11*sin(state(2))) + m21*(-(c11*cos(state(2))) - c12*sin(state(2))))*
+                  (m21*(c22*cos(state(2)) - c21*sin(state(2))) + m11*(c21*cos(state(2)) + c22*sin(state(2)))))/
+                pow(m21*(c12*cos(state(2)) - c11*sin(state(2))) + m11*(c11*cos(state(2)) + c12*sin(state(2))),
+                 2))/(1 + pow(m21*(c22*cos(state(2)) - c21*sin(state(2))) +
+                  m11*(c21*cos(state(2)) + c22*sin(state(2))),2)/
+                pow(m21*(c12*cos(state(2)) - c11*sin(state(2))) + m11*(c11*cos(state(2)) + c12*sin(state(2))),
+                 2));
+    return dh;
+
+
 }
 
 Eigen::MatrixXd Marker2dSensorModel::jacobianNoise(const Eigen::VectorXd &, const Eigen::VectorXd &) const {

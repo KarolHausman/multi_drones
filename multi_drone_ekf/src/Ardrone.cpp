@@ -126,7 +126,7 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
                 cam_to_world_flat = cam_to_world_flat.inverse();
 
-                sensorModel = new ranav::Marker2dSensorModel(cam_to_world_flat, drone_to_marker_flat);
+                sensorModel = new ranav::Marker3dSensorModel(cam_to_world_flat, drone_to_marker_flat);
 
                 kalman_filter_->correctionStep(measurement, *sensorModel, cam_to_world_flat, drone_to_marker_flat, cam_to_world_transform, drone_to_marker_transform);
 

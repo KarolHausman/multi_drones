@@ -20,7 +20,7 @@
 #include <Eigen/Core>
 #include <boost/bind.hpp>
 #include "multi_drone_ekf/rotor3Dmotionmodel.h"
-#include "multi_drone_ekf/marker2dsensormodel.h"
+#include "multi_drone_ekf/marker3dsensormodel.h"
 
 
 

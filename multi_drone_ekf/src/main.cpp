@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
 
 
 
-/*visualization of sigma
+//visualization of sigma
 
             visualization_msgs::Marker marker;
             int id = 0;
@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
               xy(1,j) = sin(2*M_PI/segs*j);
              }
 
-             Eigen::Matrix2f R; R << drone_observer.kalman_filter_.sigma_(0,0), drone_observer.kalman_filter_.sigma_(0,1) , drone_observer.kalman_filter_.sigma_(1,0) , drone_observer.kalman_filter_.sigma_(1,1);
+             Eigen::Matrix2f R; R << drone_observer.kalman_filter_->sigma_(0,0), drone_observer.kalman_filter_->sigma_(0,1) , drone_observer.kalman_filter_->sigma_(1,0) , drone_observer.kalman_filter_->sigma_(1,1);
 
              xy = R*xy;
 
@@ -203,13 +203,13 @@ int main(int argc, char **argv) {
              marker.id = id++;
 
              for (uint j=0; j<segs; ++j){
-                 p.x = xy(0,j)+drone_observer.kalman_filter_.state_(0); p.y = xy(1,j)+drone_observer.kalman_filter_.state_(1); p.z = drone_observer.distZ_;
+                 p.x = xy(0,j)+drone_observer.kalman_filter_->state_(0); p.y = xy(1,j)+drone_observer.kalman_filter_->state_(1); p.z = drone_observer.distZ_;
               marker.points.push_back(p);
              }
 //             marker.points.push_back(marker.points[0]);
              pub_markers.publish(marker);
 
-*/
+
 
         }
 
