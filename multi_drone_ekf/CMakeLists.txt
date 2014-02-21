@@ -32,4 +32,12 @@ rosbuild_genmsg()
 find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS})
 
-rosbuild_add_executable(multi_drone_ekf src/main.cpp src/EKF.cpp src/Ardrone.cpp src/Camera.cpp src/motionmodel.cpp src/random.cpp src/rotor2Dmotionmodel.cpp src/sensormodel.cpp src/rotor3Dmotionmodel.cpp src/marker2dsensormodel.cpp src/marker3dsensormodel.cpp src/PIDcontroller.cpp src/Ardronecontroller.cpp)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
+find_package(Ranav REQUIRED)
+include_directories(${RANAV_INCLUDE_DIR})
+link_directories(${RANAV_LIBRARY_DIR})
+
+rosbuild_add_executable(multi_drone_control src/main_control.cpp src/ArdroneRosSync.cpp src/MultiAgent3dNavigation.cpp src/marker3dsensormodel.cpp)
+target_link_libraries(multi_drone_control ${RANAV_LIBRARIES})
+
+#rosbuild_add_executable(multi_drone_ekf src/main.cpp src/EKF.cpp src/Ardrone.cpp src/Camera.cpp src/motionmodel.cpp src/random.cpp src/rotor2Dmotionmodel.cpp src/sensormodel.cpp src/rotor3Dmotionmodel.cpp src/marker2dsensormodel.cpp src/marker3dsensormodel.cpp src/PIDcontroller.cpp src/Ardronecontroller.cpp)

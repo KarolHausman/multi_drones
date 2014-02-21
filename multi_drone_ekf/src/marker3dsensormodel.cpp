@@ -5,22 +5,12 @@
 
 namespace ranav {
 
-Marker3dSensorModel::Marker3dSensorModel()
+Marker3dSensorModel::Marker3dSensorModel(int from, int to) : Cam2dSensorModel(from, to)
 {
-    noiseCov = Eigen::MatrixXd::Identity(3,3);
     noiseCovPrime = Eigen::MatrixXd::Zero(6,6);
     noiseCovPrime(0,0) = noiseCovPrime(1,1) = noiseCovPrime(2,2) = 0.01;
     noiseCovPrime(3,3) = noiseCovPrime(4,4) = 0.01;
     noiseCovPrime(5,5) = 0.001;
-    noiseCovSqrt = Eigen::MatrixXd::Identity(3,3);
-    stateDim = 3;
-    measurementDim = 3;
-    noiseDim = 2;
-    H = Eigen::MatrixXd::Zero(3, 3);
-    W = Eigen::MatrixXd::Identity(3, 3);
-    visibilityRadius = 0.2;
-    measurementNoise = 0.01;
-    distanceNoiseFactor = 0.2;
 }
 
 Marker3dSensorModel::~Marker3dSensorModel()
@@ -36,13 +26,11 @@ Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const Eigen::VectorX
 
     world_to_cam.getBasis().getEulerYPR(c_yaw,c_pitch,c_roll);
 
-
     double c_x =0;double c_y=0; //double c_z=0;
 
     c_x = world_to_cam.getOrigin().getX();
     c_y = world_to_cam.getOrigin().getY();
 //    c_z = world_to_cam.getOrigin().getZ();
-
 
     tf::Transform cam_to_marker;
     tf::Vector3 origin(measurement(0), measurement(1), measurement(2));
@@ -65,7 +53,6 @@ Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const Eigen::VectorX
     m_y = world_to_marker.getOrigin().getY();
 //    m_z = world_to_marker.getOrigin().getZ();
 
-
     tf::Transform c_3d,z_3d,m_3d;
 
     tf::Vector3 c_3d_origin(c_x,c_y,0);
@@ -74,19 +61,15 @@ Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const Eigen::VectorX
     c_3d.setOrigin(c_3d_origin);
     c_3d.setRotation(c_3d_rotation);
 
-
-
     tf::Vector3 m_3d_origin(m_x,m_y,0);
     tf::Quaternion m_3d_rotation;
     m_3d_rotation.setRPY(0,0,m_yaw);
     m_3d.setOrigin(m_3d_origin);
     m_3d.setRotation(m_3d_rotation);
 
-
     z_3d = c_3d.inverse()*m_3d;
 
     Eigen::VectorXd measurement_3dog = Eigen::Vector3d::Zero();
-
 
     measurement_3dog(0) = z_3d.getOrigin().getX();
     measurement_3dog(1) = z_3d.getOrigin().getY();
@@ -135,13 +118,7 @@ void Marker3dSensorModel::setNoiseCov(const tf::Transform& world_to_cam, const E
                   (pow(c12,2) + pow(c22,2))*pow(sin(y),2) +
                   (c11*c12 + c21*c22)*sin(2*y)));
 
-
-
-
-
     noiseCov = dh_prime * noiseCovPrime * dh_prime.transpose();
-
-
 }
 
 };
