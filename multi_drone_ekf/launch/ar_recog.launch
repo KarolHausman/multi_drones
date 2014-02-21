@@ -3,6 +3,7 @@
 
 <!-- ar_recog -->
   <node name="image_listener" pkg="ar_recog" type="ar_recog" respawn="true" cwd="node">
+    <remap from="/image_listener" to="/drone/image_listener"/>
     <remap from="image" to="/ardrone/image_raw" />
     <remap from="/ar/image" to="/drone/arimage"/>
     <remap from="/tags" to="/drone/tags"/>
