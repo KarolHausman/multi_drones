@@ -12,6 +12,7 @@
 #include "visualization_msgs/MarkerArray.h"
 
 
+// unused
 struct Marker {
 
     std::string tags_topic_;

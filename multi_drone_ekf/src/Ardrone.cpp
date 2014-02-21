@@ -123,6 +123,7 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
 
 
+                // Kalman filter correction
                 sensorModel = new ranav::Marker3dSensorModel;
                 sensorModel->init(cam_to_world_flat, drone_to_marker_flat);
                 sensorModel->setNoiseCov(world_to_cam_transform_,measurement);
@@ -132,6 +133,7 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
                 kalman_filter_->correctionStep(measurement_3dog, *sensorModel);
 
+                // visualize Kalman filter state
                 btQuaternion newRotation;
                 newRotation.setEulerZYX(kalman_filter_->state_(2), pitch_, roll_);
                 state_pose_.setRotation(newRotation);
