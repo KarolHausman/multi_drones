@@ -1,0 +1,68 @@
+#the number of patterns to be recognized
+13
+
+alpha
+patt.alpha
+159.0
+0.0 0.0
+
+beta
+patt.beta
+159.0
+0.0 0.0
+
+cents
+patt.cents
+159.0
+0.0 0.0
+
+delta
+patt.delta
+159.0
+0.0 0.0
+
+epsilon
+patt.epsilon
+159.0
+0.0 0.0
+
+eta
+patt.eta
+159.0
+0.0 0.0
+
+gamma
+patt.gamma
+159.0
+0.0 0.0
+
+hiro
+patt.hiro
+159.0
+0.0 0.0
+
+iota
+patt.iota
+159.0
+0.0 0.0
+
+kanji
+patt.kanji
+159.0
+0.0 0.0
+
+kappa
+patt.kappa
+159.0
+0.0 0.0
+
+theta
+patt.theta
+159.0
+0.0 0.0
+
+zeta
+patt.zeta
+159.0
+0.0 0.0
+
