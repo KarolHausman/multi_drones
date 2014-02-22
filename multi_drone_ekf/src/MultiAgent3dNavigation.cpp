@@ -49,6 +49,7 @@ void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurem
     odo.segment(cSD*(it-odometry.begin()), 3) = Eigen::Vector3d(it->movement.getOrigin().getX(), it->movement.getOrigin().getY(), atan2(sin(yaw), cos(yaw)));
   }
   odo /= getCycleDt();
+  ROS_INFO_STREAM("Integrating odometry (" << odo.transpose() << ")");
   ekf->predict(odo);
 
   getStateEstimate(stateEstimate);
