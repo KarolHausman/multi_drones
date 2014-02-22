@@ -1,0 +1,18 @@
+<launch>  
+
+<include file="$(find openni_launch)/launch/openni.launch"/>
+
+<!-- ar_recog kinect-->
+  <node name="image_listener" pkg="ar_recog" type="ar_recog" respawn="true" cwd="node">
+    <remap from="/image_listener" to="/node100/image_listener"/>
+    <remap from="image" to="/camera/rgb/image_color" />
+    <remap from="/ar/image" to="/node100/arimage"/>
+    <remap from="/tags" to="/node100/tags"/>
+  </node>
+
+  <node pkg="image_view" type="image_view" name="image_view" cwd="node" required="false">
+    <remap from="image" to="/node100/arimage"/>
+    <param name="autosize" value="true" />
+  </node>
+
+</launch>  

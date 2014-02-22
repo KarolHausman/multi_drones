@@ -48,6 +48,8 @@ protected:
   std::vector<ros::Subscriber> sub_tags; //!< tags subscriber
   std::vector<ros::Subscriber> sub_navs; //!< navdata subscriber
   tf::TransformBroadcaster transform_broadcaster;
+  tf::Transform pose_around_y; //!< transform for the marker detection
+
 
   MultiAgent3dNavigation *navigation;
 };

@@ -15,6 +15,15 @@ navigation(navigation)
     globalId = 100; // TODO: parameter
     targetMarkerId = 9; // TODO: parameter
 
+    //transform for the tagCB
+    btVector3 trans_around_y(0,0,0);
+    btQuaternion rot_around_y;
+    rot_around_y.setEulerZYX(0,-M_PI/2,0);
+    pose_around_y.setOrigin(trans_around_y);
+    pose_around_y.setRotation(rot_around_y);
+
+
+
     { // subscribe to global camera
       boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, globalId) );
       std::stringstream ss;
@@ -54,7 +63,7 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
         return;
 
     for (int i = 0; i < tag_cnt; ++i) {
-        ROS_DEBUG("Found tag  %i (cf: %.3f)", tag_msg->tags[i].id, tag_msg->tags[i].cf);
+        ROS_INFO("Found tag  %i (cf: %.3f) for ID = %i", tag_msg->tags[i].id, tag_msg->tags[i].cf, ardroneId);
 
         multi_drone_ekf::Tag tag = tag_msg->tags[i];
 
@@ -69,12 +78,9 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
         double rot_y_ = -tag.xRot;
         double rot_x_ = tag.zRot;
 
-        btVector3 trans_around_y(0,0,0);
-        btQuaternion rot_around_y;
-        rot_around_y.setEulerZYX(0,-M_PI/2,0);
-        tf::Transform pose_around_y;
-        pose_around_y.setOrigin(trans_around_y);
-        pose_around_y.setRotation(rot_around_y);
+
+
+
         btVector3 translation(trans_x_,trans_y_,trans_z_);
         btQuaternion rotation;
         rotation.setEulerZYX(rot_z_, rot_y_,rot_x_);
@@ -205,7 +211,11 @@ void ArdroneRosSync::checkCycle() {
         }
       }
     }
+    it->second.measurements.clear();
   }
+
+
+
   measurement.fromId = -1;
   for (std::vector<std::pair<int, tf::Transform> >::iterator m = globalMeasurements.begin();
       m != globalMeasurements.end(); ++m) {
@@ -224,27 +234,65 @@ void ArdroneRosSync::checkCycle() {
     }
   }
 
-  // call navigation function
-  std::vector<geometry_msgs::Twist> control;
-  std::vector<tf::Transform> stateEstimate;
-  navigation->navigate(measurements, odometry, control, stateEstimate);
+  globalMeasurements.clear();
 
-  // publish state estimate
-  assert(stateEstimate.size() == agents.size()+1);
-  int i = 0;
-  for (std::map<int, Agent>::iterator it = agents.begin();
-      it != agents.end(); ++it, ++i) {
-    std::stringstream ss;
-    ss << "/node" << it->second.ardroneId;
-    ROS_INFO("Transform called");
-    transform_broadcaster.sendTransform(tf::StampedTransform(stateEstimate[i], now, "/world", ss.str()));
+
+  std::cout << "-------------------ODOMETRY: ---------------------------------" << std::endl;
+  for(std::vector<MultiAgent3dNavigation::Odometry3D>::iterator o_it = odometry.begin(); o_it != odometry.end(); ++o_it)
+  {
+      std::cout << "Agent ID= " << o_it->id << std::endl;
+      std::cout << "Agent Transform: " << std::endl;
+      std::cout <<"x: " << o_it->movement.getOrigin().getX() << std::endl;
+      std::cout <<"y: " << o_it->movement.getOrigin().getY() << std::endl;
+      std::cout <<"z: " << o_it->movement.getOrigin().getZ() << std::endl;
+      double roll, pitch, yaw;
+      o_it->movement.getBasis().getRPY(roll, pitch, yaw);
+      std::cout <<"roll: " << roll << std::endl;
+      std::cout <<"pitch: " << pitch << std::endl;
+      std::cout <<"yaw: " << yaw << std::endl;
+
   }
 
-  // publish controls (not in first test)
-  assert(control.size() == agents.size());
-  i = 0;
-  for (std::map<int, Agent>::iterator it = agents.begin();
-      it != agents.end(); ++it, ++i) {
-//    it->second.pub_control.publish(control[i]);
+
+  std::cout << "-------------------MEASUREMENTS: -------------------------------" <<std::endl;
+  std::cout << "MEASUREMENTS SIZE: " << measurements.size() << std::endl;
+  for(std::vector<MultiAgent3dNavigation::Measurement3D>::iterator m_it = measurements.begin(); m_it != measurements.end(); ++m_it)
+  {
+      std::cout << std::endl << "From ID= " << m_it->fromId << std::endl;
+      std::cout << "To ID= " << m_it->toId << std::endl;
+      std::cout << "Measurement Transform: " << std::endl;
+      std::cout <<"x: " << m_it->measurement.getOrigin().getX() << std::endl;
+      std::cout <<"y: " << m_it->measurement.getOrigin().getY() << std::endl;
+      std::cout <<"z: " << m_it->measurement.getOrigin().getZ() << std::endl;
+      double roll, pitch, yaw;
+      m_it->measurement.getBasis().getRPY(roll, pitch, yaw);
+      std::cout <<"roll: " << roll << std::endl;
+      std::cout <<"pitch: " << pitch << std::endl;
+      std::cout <<"yaw: " << yaw << std::endl;
+
   }
+
+//  // call navigation function
+//  std::vector<geometry_msgs::Twist> control;
+//  std::vector<tf::Transform> stateEstimate;
+//  navigation->navigate(measurements, odometry, control, stateEstimate);
+
+//  // publish state estimate
+//  assert(stateEstimate.size() == agents.size()+1);
+//  int i = 0;
+//  for (std::map<int, Agent>::iterator it = agents.begin();
+//      it != agents.end(); ++it, ++i) {
+//    std::stringstream ss;
+//    ss << "/node" << it->second.ardroneId;
+//    ROS_INFO("Transform called");
+//    transform_broadcaster.sendTransform(tf::StampedTransform(stateEstimate[i], now, "/world", ss.str()));
+//  }
+
+//  // publish controls (not in first test)
+//  assert(control.size() == agents.size());
+//  i = 0;
+//  for (std::map<int, Agent>::iterator it = agents.begin();
+//      it != agents.end(); ++it, ++i) {
+////    it->second.pub_control.publish(control[i]);
+//  }
 }

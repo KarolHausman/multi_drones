@@ -50,8 +50,15 @@ int main(int argc, char **argv) {
 
   ArdroneRosSync rosSync(nh_, &navigation);
 
+  tf::TransformBroadcaster br;
+
+
   while (nh_.ok()) {
       ros::spinOnce();
+      br.sendTransform(
+                  tf::StampedTransform(camera.tag_pose_.inverse(), ros::Time::now(), "/world",
+                                       "/kinect"));
+
   }
 
   return 0;

@@ -1,0 +1,16 @@
+<launch>  
+
+<!-- ar_recog drone-->
+  <node name="image_listener1" pkg="ar_recog" type="ar_recog" respawn="true" cwd="node">
+    <remap from="/image_listener" to="/node1/image_listener"/>
+    <remap from="image" to="/node1/image_raw" />
+    <remap from="/ar/image" to="/node1/arimage"/>
+    <remap from="/tags" to="/node1/tags"/>
+  </node> 
+
+  <node pkg="image_view" type="image_view" name="image_view1" cwd="node" required="false">
+    <remap from="image" to="/node1/arimage"/>
+    <param name="autosize" value="true" />
+  </node>
+
+</launch>  

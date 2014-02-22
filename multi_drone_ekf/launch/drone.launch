@@ -1,0 +1,15 @@
+<launch>  
+
+<!-- ardrone_autonomy -->
+  <node name="ardrone_driver" pkg="ardrone_autonomy" type="ardrone_driver" output="screen">
+    <remap from="/ardrone/navdata" to="node1/navdata" />    
+    <remap from="/ardrone/image_raw" to="node1/image_raw" /> 
+  </node>   
+
+<!-- joy_node -->
+  <node name="joy_node" pkg="joy" type="joy_node"/>
+
+<!-- tum_ardrone -->
+  <node name="drone_gui" pkg="tum_ardrone" type="drone_gui"/>
+
+</launch>  

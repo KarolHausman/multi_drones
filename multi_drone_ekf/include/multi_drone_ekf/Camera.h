@@ -25,6 +25,8 @@ struct Camera {
     double rot_x_, rot_y_, rot_z_;
     int avg_number_;
     bool pose_set_;
+    tf::Transform pose_around_y_;
+
 
 
 
