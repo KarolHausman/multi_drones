@@ -1,8 +1,12 @@
 #include "multi_drone_ekf/ArdroneRosSync.h"
+#include "multi_drone_ekf/MultiAgent3dNavigation.h"
 
 
-ArdroneRosSync::ArdroneRosSync(ros::NodeHandle &nh)
+ArdroneRosSync::ArdroneRosSync(ros::NodeHandle &nh, MultiAgent3dNavigation *navigation) :
+navigation(navigation)
 {
+  assert(navigation != NULL);
+  cycleDt = navigation->getCycleDt();
     //create agent map
     Agent drone_observer;
     drone_observer.markerId = 1;
@@ -17,13 +21,11 @@ ArdroneRosSync::ArdroneRosSync(ros::NodeHandle &nh)
         std::stringstream ss;
         ss << iter->second.ardroneId;
         std::string tag_topic = "/" + ss.str() + "/tags";
-        ros::Subscriber sub_tag = nh.subscribe(tag_topic, 100, tag_callback);
-        sub_tags.push_back(sub_tag);
+        sub_tags.push_back(nh.subscribe(tag_topic, 100, tag_callback));
 
         boost::function<void (const multi_drone_ekf::NavdataConstPtr&)> nav_callback( boost::bind(&ArdroneRosSync::navCB, this, _1, iter->second.ardroneId) );
         std::string nav_topic = "/" + ss.str() + "/navdata";
-        ros::Subscriber sub_nav = nh.subscribe(nav_topic, 100, nav_callback);
-        sub_navs.push_back(sub_nav);
+        sub_navs.push_back(nh.subscribe(nav_topic, 100, nav_callback));
     }
 }
 
@@ -66,17 +68,12 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint ar
         btQuaternion rotation;
         rotation.setEulerZYX(rot_z_, rot_y_,rot_x_);
 
+        tf::Transform tag_pose;
+        tag_pose.setOrigin(translation);
+        tag_pose.setRotation(rotation);
+        tag_pose = tag_pose*pose_around_y;
 
-
-        if (tag.id == agents[ardroneId].markerId){
-
-            tf::Transform tag_pose;
-            tag_pose.setOrigin(translation);
-            tag_pose.setRotation(rotation);
-            tag_pose = tag_pose*pose_around_y;
-
-            agents[ardroneId].measurement = tag_pose;
-        }
+        agents[ardroneId].measurements.push_back(std::pair<int, tf::Transform>(tag.id, tag_pose));
     }
 
 }
@@ -114,3 +111,17 @@ void ArdroneRosSync::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, uint
     agents[ardroneId].odometry = odometry;
 }
 
+
+void ArdroneRosSync::checkCycle() {
+  // check if cycleDt passed
+
+  // compute incremental odometry, set last_odometry, set lastCycle, check for first cycle
+
+  // replace marker ids by sensed object ids (also include target)
+
+  // call navigation function
+
+  // publish state estimate
+
+  // publish controls (not in first test)
+}

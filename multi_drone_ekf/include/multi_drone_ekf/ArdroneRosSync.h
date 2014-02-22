@@ -15,7 +15,7 @@ class MultiAgent3dNavigation;
 class ArdroneRosSync {
 public:
   //! Creates the list of agents. Subscribes to the topics of all agents. Sets navigation function.
-  ArdroneRosSync(ros::NodeHandle &nh);
+  ArdroneRosSync(ros::NodeHandle &nh, MultiAgent3dNavigation *navigation);
   ~ArdroneRosSync();
 
   //! Handles all incoming marker observations and stores them as measurements of the given ardroneId
@@ -30,18 +30,20 @@ protected:
   struct Agent {
     bool operator<(const Agent &other) const { return ardroneId < other.ardroneId; }
     uint markerId;
-    uint ardroneId;
+    uint ardroneId; // for topic
+    tf::Transform last_odometry;
     tf::Transform odometry;
-    tf::Transform measurement;
+    std::vector<std::pair<int, tf::Transform> > measurements; // pair: id of sensed marker, measurement transform
   };
 
   std::map<int, Agent> agents;
+  int globalId; // for topic
+  uint targetId; // for topic
+  uint targetMarkerId;
   ros::Time lastCycle; //!< the time when the last cycle was executed
   double cycleDt; //!< duration of one cycle
   std::vector<ros::Subscriber> sub_tags; //!< tags subscriber
   std::vector<ros::Subscriber> sub_navs; //!< navdata subscriber
-
-
 
   MultiAgent3dNavigation *navigation;
 };

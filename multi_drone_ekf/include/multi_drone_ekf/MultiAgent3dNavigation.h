@@ -17,12 +17,14 @@ public:
   MultiAgent3dNavigation();
   ~MultiAgent3dNavigation();
 
+  double getCycleDt() { return params("estimation/motionDt").toDouble(); }
+
   struct Measurement3D {
-    int fromId, toId;
+    int fromId, toId; //!< agent ID (-1: global GPS; 0, ..., N-1: agents; N: target)
     tf::Transform measurement;
   };
   struct Odometry3D {
-    int id;
+    int id; //!< agent ID (0, ..., N-1)
     tf::Transform movement;
   };
 
