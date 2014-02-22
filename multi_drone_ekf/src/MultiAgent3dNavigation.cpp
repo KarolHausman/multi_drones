@@ -4,7 +4,7 @@
 #include "multi_drone_ekf/marker3dsensormodel.h"
 
 
-void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurements, const std::vector<Odometry3D> &odometry, std::vector<geometry_msgs::Twist> &control, std::vector<tf::Transform> stateEstimate)
+void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurements, const std::vector<Odometry3D> &odometry, std::vector<geometry_msgs::Twist> &control, std::vector<tf::Transform>& stateEstimate)
 {
 
     for(std::vector<Measurement3D>::const_iterator m_it = measurements.begin(); m_it != measurements.end(); ++m_it)
