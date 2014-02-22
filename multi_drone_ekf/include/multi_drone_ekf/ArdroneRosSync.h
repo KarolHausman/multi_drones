@@ -19,31 +19,35 @@ public:
   ~ArdroneRosSync();
 
   //! Handles all incoming marker observations and stores them as measurements of the given ardroneId
-  void tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint ardroneId);
+  void tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ardroneId);
   //! Handles all incoming odometry data and stores them for the given ardroneId
-  void navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, uint ardroneId);
+  void navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, int ardroneId);
 
   //! checks whether the collected data is complete to run a cycle of the navigation algorithm. Send the control command(s)
   void checkCycle();
 
 protected:
   struct Agent {
+    Agent() : gotOdo(false) {}
     bool operator<(const Agent &other) const { return ardroneId < other.ardroneId; }
-    uint markerId;
-    uint ardroneId; // for topic
+    int markerId;
+    int ardroneId; // for topic
     tf::Transform last_odometry;
     tf::Transform odometry;
-    std::vector<std::pair<int, tf::Transform> > measurements; // pair: id of sensed marker, measurement transform
+    std::vector<std::pair<int, tf::Transform> > measurements; //!< pair: id of sensed marker, measurement transform
+    bool gotOdo;
+    ros::Publisher pub_control;
   };
 
   std::map<int, Agent> agents;
-  int globalId; // for topic
-  uint targetId; // for topic
-  uint targetMarkerId;
+  int globalId; // for camera topic
+  std::vector<std::pair<int, tf::Transform> > globalMeasurements; //!< pair: id of sensed marker, measurement transform
+  int targetMarkerId;
   ros::Time lastCycle; //!< the time when the last cycle was executed
   double cycleDt; //!< duration of one cycle
   std::vector<ros::Subscriber> sub_tags; //!< tags subscriber
   std::vector<ros::Subscriber> sub_navs; //!< navdata subscriber
+  tf::TransformBroadcaster transform_broadcaster;
 
   MultiAgent3dNavigation *navigation;
 };

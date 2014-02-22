@@ -8,12 +8,21 @@ navigation(navigation)
   assert(navigation != NULL);
   cycleDt = navigation->getCycleDt();
     //create agent map
-    Agent drone_observer;
-    drone_observer.markerId = 1;
-    drone_observer.ardroneId = 1;
-    agents.insert(std::make_pair(drone_observer.ardroneId, drone_observer));
+    Agent agent;
+    agent.markerId = 1; // TODO: parameter
+    agent.ardroneId = 1; // TODO: parameter
+    agents[agent.ardroneId] = agent;
+    globalId = -1; // TODO: parameter
+    targetMarkerId = 123; // TODO: parameter
 
-
+    { // subscribe to global camera
+      boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, globalId) );
+      std::stringstream ss;
+      ss << globalId;
+      std::string tag_topic = "/" + ss.str() + "/tags";
+      sub_tags.push_back(nh.subscribe(tag_topic, 100, tag_callback));
+    }
+    // subscribe to all agent's cameras and create control publishers
     std::map<int, Agent>::iterator iter;
     for (iter = agents.begin(); iter != agents.end(); ++iter)
     {
@@ -26,12 +35,14 @@ navigation(navigation)
         boost::function<void (const multi_drone_ekf::NavdataConstPtr&)> nav_callback( boost::bind(&ArdroneRosSync::navCB, this, _1, iter->second.ardroneId) );
         std::string nav_topic = "/" + ss.str() + "/navdata";
         sub_navs.push_back(nh.subscribe(nav_topic, 100, nav_callback));
+
+        iter->second.pub_control = nh.advertise<geometry_msgs::Twist>("/" + ss.str() + "/cmd_vel", 1);
     }
 }
 
 
 
-void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint ardroneId)
+void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ardroneId)
 {
     int tag_cnt = tag_msg->tag_count;
 
@@ -39,7 +50,7 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint ar
         return;
 
     for (int i = 0; i < tag_cnt; ++i) {
-        if (agents[ardroneId].markerId == tag_msg->tags[i].id)
+        if (agents[ardroneId].markerId == (int)tag_msg->tags[i].id)
             ROS_DEBUG("Found tag  %i (cf: %.3f)", tag_msg->tags[i].id, tag_msg->tags[i].cf);
     }
 
@@ -73,13 +84,17 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint ar
         tag_pose.setRotation(rotation);
         tag_pose = tag_pose*pose_around_y;
 
-        agents[ardroneId].measurements.push_back(std::pair<int, tf::Transform>(tag.id, tag_pose));
+        if (ardroneId == globalId) {
+          globalMeasurements.push_back(std::make_pair(tag.id, tag_pose));
+        } else {
+          agents[ardroneId].measurements.push_back(std::make_pair(tag.id, tag_pose));
+        }
     }
 
 }
 
 
-void ArdroneRosSync::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, uint ardroneId)
+void ArdroneRosSync::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, int ardroneId)
 {
 
     ROS_DEBUG_STREAM(
@@ -109,19 +124,95 @@ void ArdroneRosSync::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, uint
     odometry.setRotation(odom_rot);
 
     agents[ardroneId].odometry = odometry;
+
+    checkCycle();
 }
 
 
 void ArdroneRosSync::checkCycle() {
-  // check if cycleDt passed
+  // check for first cycle
+  if (!lastCycle.isValid()) {
+    bool gotOdo = true;
+    for (std::map<int, Agent>::iterator it = agents.begin();
+        it != agents.end(); ++it) {
+      if (!it->second.gotOdo)
+        gotOdo = false;
+    }
+    if (!gotOdo) {
+      return;
+    }
+    // last timestep initialization for incremental odometry
+    lastCycle = ros::Time::now();
+    for (std::map<int, Agent>::iterator it = agents.begin();
+        it != agents.end(); ++it) {
+      it->second.last_odometry = it->second.odometry;
+    }
+    return;
+  }
 
-  // compute incremental odometry, set last_odometry, set lastCycle, check for first cycle
+  // check if cycleDt passed
+  ros::Time now = ros::Time::now();
+  if ((now - lastCycle).toSec() < cycleDt) {
+    return;
+  }
+  lastCycle = now;
+
+  // compute incremental odometry, set last_odometry
+  std::vector<MultiAgent3dNavigation::Odometry3D> odometry;
+  int id = 0;
+  for (std::map<int, Agent>::iterator it = agents.begin();
+      it != agents.end(); ++it, ++id) {
+    MultiAgent3dNavigation::Odometry3D odo;
+    odo.id = id;
+    odo.movement = it->second.last_odometry.inverse() * it->second.odometry;
+    it->second.last_odometry = it->second.odometry;
+    odometry.push_back(odo);
+  }
 
   // replace marker ids by sensed object ids (also include target)
+  std::vector<MultiAgent3dNavigation::Measurement3D> measurements;
+  MultiAgent3dNavigation::Measurement3D measurement;
+  measurement.fromId = 0;
+  for (std::map<int, Agent>::iterator it = agents.begin();
+      it != agents.end(); ++it, ++measurement.fromId) {
+    for (std::vector<std::pair<int, tf::Transform> >::iterator m = it->second.measurements.begin();
+        m != it->second.measurements.end(); ++m) {
+      if (m->first == targetMarkerId) {
+        measurement.toId = agents.size(); // target has ID N (for N agents)
+        measurement.measurement = m->second;
+        measurements.push_back(measurement);
+      }
+      measurement.toId = 0;
+      for (std::map<int, Agent>::iterator ag = agents.begin();
+          ag != agents.end(); ++ag, ++measurement.toId) {
+        if (m->first == ag->second.markerId) {
+          measurement.measurement = m->second;
+          measurements.push_back(measurement);
+        }
+      }
+    }
+  }
 
   // call navigation function
+  std::vector<geometry_msgs::Twist> control;
+  std::vector<tf::Transform> stateEstimate;
+//  navigation->navigate(measurements, odometry, control, stateEstimate); // TODO
 
   // publish state estimate
+  assert(stateEstimate.size() == agents.size()+1);
+  int i = 0;
+  for (std::map<int, Agent>::iterator it = agents.begin();
+      it != agents.end(); ++it, ++i) {
+    std::stringstream ss;
+    ss << "/" << it->second.ardroneId;
+    transform_broadcaster.sendTransform(tf::StampedTransform(stateEstimate[i], now, "/world", ss.str()));
+  }
 
   // publish controls (not in first test)
+  assert(control.size() == agents.size());
+  i = 0;
+  for (std::map<int, Agent>::iterator it = agents.begin();
+      it != agents.end(); ++it, ++i) {
+//    it->second.pub_control.publish(control[i]);
+  }
 }
