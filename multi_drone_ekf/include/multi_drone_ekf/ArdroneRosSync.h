@@ -19,9 +19,9 @@ public:
   ~ArdroneRosSync();
 
   //! Handles all incoming marker observations and stores them as measurements of the given ardroneId
-  void tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ardroneId);
+  void tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint ardroneId);
   //! Handles all incoming odometry data and stores them for the given ardroneId
-  void navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, int ardroneId);
+  void navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, uint ardroneId);
 
   //! checks whether the collected data is complete to run a cycle of the navigation algorithm. Send the control command(s)
   void checkCycle();
@@ -29,12 +29,12 @@ public:
 protected:
   struct Agent {
     bool operator<(const Agent &other) const { return ardroneId < other.ardroneId; }
-    int markerId;
-    int ardroneId;
-    // store odometry data
-    // collect measurements
+    uint markerId;
+    uint ardroneId;
+    tf::Transform odometry;
+    tf::Transform measurement;
   };
-  std::set<Agent> agents;
+  std::map<int, Agent> agents;
   ros::Time lastCycle; //!< the time when the last cycle was executed
   double cycleDt; //!< duration of one cycle
 
