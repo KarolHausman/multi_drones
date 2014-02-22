@@ -38,9 +38,12 @@ Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const tf::Transform&
   tf::Transform world_to_marker2d(q, tf::Vector3(world_to_marker.getOrigin().getX(), world_to_marker.getOrigin().getY(), 0));
 
   tf::Transform projected_measurement = world_to_cam2d.inverse()*world_to_marker2d;
-  return Eigen::Vector3d(projected_measurement.getOrigin().getX(),
+  Eigen::VectorXd mproj = Eigen::Vector3d(projected_measurement.getOrigin().getX(),
                          projected_measurement.getOrigin().getY(),
                          tf::getYaw(projected_measurement.getRotation()));
+  assert(measurementDim <= 3);
+  mproj.conservativeResize(measurementDim);
+  return mproj;
 }
 
 void Marker3dSensorModel::setNoiseCov(const tf::Transform& world_to_cam, const tf::Transform& measurement)
@@ -87,7 +90,10 @@ void Marker3dSensorModel::setNoiseCov(const tf::Transform& world_to_cam, const t
                   (pow(c12,2) + pow(c22,2))*pow(sin(y),2) +
                   (c11*c12 + c21*c22)*sin(2*y)));
 
-    noiseCov = dh_prime * noiseCovPrime * dh_prime.transpose();
+    Eigen::MatrixXd projnoiseCov = dh_prime * noiseCovPrime * dh_prime.transpose();
+    assert(noiseDim <= 3);
+    projnoiseCov.conservativeResize(noiseDim, noiseDim);
+    noiseCov = projnoiseCov;
 }
 
 };

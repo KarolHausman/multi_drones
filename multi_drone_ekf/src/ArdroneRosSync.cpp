@@ -280,27 +280,27 @@ void ArdroneRosSync::checkCycle() {
 
   }
 
-//  // call navigation function
-//  std::vector<geometry_msgs::Twist> control;
-//  std::vector<tf::Transform> stateEstimate;
-//  navigation->navigate(measurements, odometry, control, stateEstimate);
+  // call navigation function
+  std::vector<geometry_msgs::Twist> control;
+  std::vector<tf::Transform> stateEstimate;
+  navigation->navigate(measurements, odometry, control, stateEstimate);
 
-//  // publish state estimate
-//  assert(stateEstimate.size() == agents.size()+1);
-//  int i = 0;
-//  for (std::map<int, Agent>::iterator it = agents.begin();
-//      it != agents.end(); ++it, ++i) {
-//    std::stringstream ss;
-//    ss << "/node" << it->second.ardroneId;
-//    ROS_INFO("Transform called");
-//    transform_broadcaster.sendTransform(tf::StampedTransform(stateEstimate[i], now, "/world", ss.str()));
-//  }
+  // publish state estimate
+  assert(stateEstimate.size() == agents.size()+1);
+  int i = 0;
+  for (std::map<int, Agent>::iterator it = agents.begin();
+      it != agents.end(); ++it, ++i) {
+    std::stringstream ss;
+    ss << "/node" << it->second.ardroneId;
+    ROS_INFO("Transform called");
+    transform_broadcaster.sendTransform(tf::StampedTransform(stateEstimate[i], now, "/world", ss.str()));
+  }
 
-//  // publish controls (not in first test)
-//  assert(control.size() == agents.size());
-//  i = 0;
-//  for (std::map<int, Agent>::iterator it = agents.begin();
-//      it != agents.end(); ++it, ++i) {
-////    it->second.pub_control.publish(control[i]);
-//  }
+  // publish controls (not in first test)
+  assert(control.size() == agents.size());
+  i = 0;
+  for (std::map<int, Agent>::iterator it = agents.begin();
+      it != agents.end(); ++it, ++i) {
+//    it->second.pub_control.publish(control[i]);
+  }
 }

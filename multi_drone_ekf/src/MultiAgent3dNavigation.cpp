@@ -71,8 +71,8 @@ void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurem
       marker3dmodel->setNoiseCov(camPose, m_it->second.measurement);
 
       Eigen::VectorXd measurement_2d = marker3dmodel->downProjectMeasurement(m_it->second.measurement, camPose);
+      ROS_INFO("Integrating measurement of model (%d, %d) with measurement dim %d", m_it->second.fromId, m_it->second.toId, measurement_2d.size());
       ekf->correct(measurement_2d, *(*s_it));
-      ROS_INFO("Integrating measurement of model (%d, %d)", m_it->second.fromId, m_it->second.toId);
     }
   }
 
