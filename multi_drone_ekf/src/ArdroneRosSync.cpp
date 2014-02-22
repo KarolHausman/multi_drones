@@ -182,10 +182,11 @@ void ArdroneRosSync::checkCycle() {
     it->second.odometry.getBasis().getEulerYPR(yaw, pitch, roll);
     q.setRPY(yaw, 0, 0);
     tf::Transform odo2d(q, tf::Vector3(it->second.odometry.getOrigin().getX(), it->second.odometry.getOrigin().getY(), 0));
-    odo.movement = lastOdo2d.inverse() * odo2d;
-    q.setRPY(roll, pitch, tf::getYaw(odo.movement.getRotation()));
-    odo.movement.setRotation(q);
-    odo.movement.getOrigin().setZ(z);
+    tf::Transform movement = lastOdo2d.inverse() * odo2d;
+    odo.movement2d = Eigen::Vector3d(movement.getOrigin().getX(), movement.getOrigin().getY(), tf::getYaw(movement.getRotation()));
+    odo.roll = roll;
+    odo.pitch = pitch;
+    odo.z = z;
     it->second.last_odometry = it->second.odometry;
     odometry.push_back(odo);
   }

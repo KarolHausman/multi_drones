@@ -28,7 +28,8 @@ public:
   };
   struct Odometry3D {
     int id; //!< agent ID (0, ..., N-1)
-    tf::Transform movement;
+    Eigen::Vector3d movement2d; //!< incremental movement
+    double roll, pitch, z; //!< current values
   };
 
   //! downproject all to 2D

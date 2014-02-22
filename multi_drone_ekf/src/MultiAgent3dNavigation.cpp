@@ -41,12 +41,12 @@ void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurem
   Eigen::VectorXd odo(cSD*nA);
   for (std::vector<Odometry3D>::const_iterator it = odometry.begin(); it != odometry.end(); ++it) {
     // update addOn
-    double roll, pitch, yaw;
-    it->movement.getBasis().getRPY(roll, pitch, yaw);
-    addOn3d[it-odometry.begin()] = AddOn3d(roll, pitch, it->movement.getOrigin().getZ());
+    addOn3d[it-odometry.begin()] = AddOn3d(it->roll, it->pitch, it->z);
 
     // EKF prediction step
-    odo.segment(cSD*(it-odometry.begin()), 3) = Eigen::Vector3d(it->movement.getOrigin().getX(), it->movement.getOrigin().getY(), atan2(sin(yaw), cos(yaw)));
+    Eigen::Vector3d movement = it->movement2d;
+    movement(2) = atan2(sin(movement(2)), cos(movement(2)));
+    odo.segment(cSD*(it-odometry.begin()), 3) = movement;
   }
   odo /= getCycleDt();
   ROS_INFO_STREAM("Integrating odometry (" << odo.transpose() << ")");
