@@ -18,7 +18,7 @@ Marker3dSensorModel::~Marker3dSensorModel()
 }
 
 
-Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const Eigen::VectorXd& measurement, const tf::Transform& world_to_cam) const
+Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const tf::Transform& measurement, const tf::Transform& world_to_cam) const
 {
     double c_yaw = 0;
     double c_pitch = 0;
@@ -32,14 +32,14 @@ Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const Eigen::VectorX
     c_y = world_to_cam.getOrigin().getY();
 //    c_z = world_to_cam.getOrigin().getZ();
 
-    tf::Transform cam_to_marker;
-    tf::Vector3 origin(measurement(0), measurement(1), measurement(2));
-    cam_to_marker.setOrigin(origin);
-    tf::Quaternion rotation;
-    rotation.setRPY(measurement(3),measurement(4), measurement(5));
-    cam_to_marker.setRotation(rotation);
+//    tf::Transform cam_to_marker;
+//    tf::Vector3 origin(measurement(0), measurement(1), measurement(2));
+//    cam_to_marker.setOrigin(origin);
+//    tf::Quaternion rotation;
+//    rotation.setRPY(measurement(3),measurement(4), measurement(5));
+//    cam_to_marker.setRotation(rotation);
 
-    tf::Transform world_to_marker = world_to_cam * cam_to_marker;
+    tf::Transform world_to_marker = world_to_cam * measurement;
 
     double m_yaw = 0;
     double m_pitch = 0;
@@ -73,13 +73,17 @@ Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const Eigen::VectorX
     return measurement_3dog;
 }
 
-void Marker3dSensorModel::setNoiseCov(const tf::Transform& world_to_cam, const Eigen::VectorXd& measurement)
+void Marker3dSensorModel::setNoiseCov(const tf::Transform& world_to_cam, const tf::Transform& measurement)
 {
 
+    double r = 0;
+    double p = 0;
+    double y = 0;
+    measurement.getBasis().getEulerYPR(y,p,r);
+
     //pitch and roll of the measurement
-    double p,y;
-    p = measurement(4);
-    y = measurement(5);
+//    p = measurement(4);
+//    y = measurement(5);
 
     double c11,c12,c13,/*c14,*/c21,c22,c23/*,c24,c31,c32,c33,c34*/;
     tf::Matrix3x3 c_rot = world_to_cam.getBasis();

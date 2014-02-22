@@ -12,8 +12,8 @@ public:
     virtual ~Marker3dSensorModel();
 
     //! world_to_cam is the camera position on its agent or the GPS-camera position wrt. to the world frame of reference
-    Eigen::VectorXd downProjectMeasurement(const Eigen::VectorXd& measurement, const tf::Transform& world_to_cam) const;
-    void setNoiseCov(const tf::Transform& world_to_cam, const Eigen::VectorXd& measurement);
+    Eigen::VectorXd downProjectMeasurement(const tf::Transform& measurement, const tf::Transform& world_to_cam) const;
+    void setNoiseCov(const tf::Transform& world_to_cam, const tf::Transform& measurement);
 
 protected:
     Eigen::MatrixXd noiseCovPrime;

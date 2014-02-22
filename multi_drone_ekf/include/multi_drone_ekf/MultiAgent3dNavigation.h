@@ -5,16 +5,19 @@
 #include <geometry_msgs/Twist.h>
 #include <tf/transform_broadcaster.h>
 
+
+
 namespace ranav {
   class MultiAgentMotionModel;
   class EKF;
   class TargetTrackingController;
+  class SensorModel;
 }
 
 class MultiAgent3dNavigation {
 public:
   //! fill TargetTrackingController::Topology::allModels with appropriate Marker3dSensorModels
-  MultiAgent3dNavigation();
+  MultiAgent3dNavigation(const tf::Transform& world_to_cam, const tf::Transform& drone_to_marker, const tf::Transform& drone_to_front_cam);
   ~MultiAgent3dNavigation();
 
   double getCycleDt() { return params("estimation/motionDt").toDouble(); }
@@ -38,12 +41,15 @@ protected:
   tf::Transform world_to_cam;
   tf::Transform drone_to_marker;
   tf::Transform drone_to_front_cam;
+  tf::Transform cam_to_world2d;
+  tf::Transform drone_to_marker2d;
 
   // 2D navigation stuff
   ranav::TParam params;
   ranav::MultiAgentMotionModel *motionModel;
   ranav::EKF *ekf;
   ranav::TargetTrackingController *ttc;
+  std::vector<ranav::SensorModel*> sensorModels;
 };
 
 #endif
