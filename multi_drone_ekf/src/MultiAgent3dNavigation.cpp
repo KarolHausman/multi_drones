@@ -53,23 +53,26 @@ void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurem
 
   getStateEstimate(stateEstimate);
 
+  // just take the most recent (last in the vector) measurement for each sensor model
+  std::map<ranav::Index, Measurement3D> measurementMap;
   for(std::vector<Measurement3D>::const_iterator m_it = measurements.begin(); m_it != measurements.end(); ++m_it) {
-    for(std::vector<ranav::SensorModel*>::iterator s_it = sensorModels.begin(); s_it != sensorModels.end(); ++s_it) {
-      ranav::MultiAgentSensorModel* multiAgentSensorModel = static_cast<ranav::MultiAgentSensorModel*>(*s_it);
-      if((multiAgentSensorModel->getFromId() == m_it->fromId)
-          && (multiAgentSensorModel->getToId() == m_it->toId)) {
-        tf::Transform camPose = world_to_cam;
-        if (m_it->fromId >= 0) { // one of the agents is sensing
-          assert((int)stateEstimate.size() > m_it->fromId);
-          camPose = stateEstimate.at(m_it->fromId) * drone_to_front_cam; // TODO: not valid for multiple drones/agents
-        }
-        ranav::Marker3dSensorModel* marker3dmodel = static_cast<ranav::Marker3dSensorModel*>(*s_it);
-        marker3dmodel->setNoiseCov(camPose, m_it->measurement);
-
-        Eigen::VectorXd measurement_2d = Eigen::Vector3d::Zero();
-        measurement_2d = marker3dmodel->downProjectMeasurement(m_it->measurement, camPose);
-        ekf->correct(measurement_2d, *(*s_it));
+    measurementMap[ranav::Index(m_it->fromId, m_it->toId)] = *m_it;
+  }
+  for(std::vector<ranav::SensorModel*>::iterator s_it = sensorModels.begin(); s_it != sensorModels.end(); ++s_it) {
+    ranav::MultiAgentSensorModel* multiAgentSensorModel = static_cast<ranav::MultiAgentSensorModel*>(*s_it);
+    std::map<ranav::Index, Measurement3D>::iterator m_it = measurementMap.find(ranav::Index(multiAgentSensorModel->getFromId(), multiAgentSensorModel->getToId()));
+    if (m_it != measurementMap.end()) {
+      tf::Transform camPose = world_to_cam;
+      if (m_it->second.fromId >= 0) { // one of the agents is sensing
+        assert((int)stateEstimate.size() > m_it->second.fromId);
+        camPose = stateEstimate.at(m_it->second.fromId) * drone_to_front_cam; // TODO: not valid for multiple drones/agents
       }
+      ranav::Marker3dSensorModel* marker3dmodel = static_cast<ranav::Marker3dSensorModel*>(*s_it);
+      marker3dmodel->setNoiseCov(camPose, m_it->second.measurement);
+
+      Eigen::VectorXd measurement_2d = marker3dmodel->downProjectMeasurement(m_it->second.measurement, camPose);
+      ekf->correct(measurement_2d, *(*s_it));
+      ROS_INFO("Integrating measurement of model (%d, %d)", m_it->second.fromId, m_it->second.toId);
     }
   }
 
