@@ -54,6 +54,7 @@ void Camera::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
         counter_ ++;
 
+
         if (counter_ == avg_number_)
         {
 

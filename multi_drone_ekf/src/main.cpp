@@ -130,6 +130,7 @@ int main(int argc, char **argv) {
 
 
 
+
         if (camera.pose_set_)
         {
 
@@ -140,9 +141,9 @@ int main(int argc, char **argv) {
                         tf::StampedTransform(drone_observer.world_to_cam_transform_, ros::Time::now(), "/zeta_marker",
                                              "/camera"));
 
-            br.sendTransform(
-                        tf::StampedTransform(drone_observer.world_to_cam_transform_*drone_observer.tag_pose_, ros::Time::now(), "/zeta_marker",
-                                             "/beta_marker"));
+//            br.sendTransform(
+//                        tf::StampedTransform(drone_observer.world_to_cam_transform_*drone_observer.tag_pose_, ros::Time::now(), "/zeta_marker",
+//                                             "/beta_marker"));
 
 
             if(init)
@@ -164,10 +165,30 @@ int main(int argc, char **argv) {
                         tf::StampedTransform(drone_observer.state_pose_, ros::Time::now()/*nav_msg->header.stamp*/,
                                              "/zeta_marker", "/ardrone"));
 
-            std::cout<<"state pose: \n x: "<< drone_observer.state_pose_.getOrigin().getX() <<"\n y: "<< drone_observer.state_pose_.getOrigin().getY() <<"\n z: " << drone_observer.state_pose_.getOrigin().getZ() <<"\n yaw: "<< tf::getYaw(drone_observer.state_pose_.getRotation())*180/M_PI<<std::endl;
+//            std::cout<<"state pose: \n x: "<< drone_observer.state_pose_.getOrigin().getX() <<"\n y: "<< drone_observer.state_pose_.getOrigin().getY() <<"\n z: " << drone_observer.state_pose_.getOrigin().getZ() <<"\n yaw: "<< tf::getYaw(drone_observer.state_pose_.getRotation())*180/M_PI<<std::endl;
 
-            controller.setGoalPose(0.6, 0.4, 0.4, 0);
-            controller.sendNewCommand(drone_observer.state_pose_.getOrigin().getX(),drone_observer.state_pose_.getOrigin().getY(),drone_observer.state_pose_.getOrigin().getZ(), tf::getYaw(drone_observer.state_pose_.getRotation()));
+//            controller.setGoalPose(0.6, 0.4, 0.4, 0);
+//            controller.sendNewCommand(drone_observer.state_pose_.getOrigin().getX(),drone_observer.state_pose_.getOrigin().getY(),drone_observer.state_pose_.getOrigin().getZ(), tf::getYaw(drone_observer.state_pose_.getRotation()));
+
+
+
+
+            tf::Transform drone_to_dronecam = drone_observer.tag_pose_calibration_*drone_observer.state_pose_;
+
+            br.sendTransform(
+                        tf::StampedTransform(drone_to_dronecam, ros::Time::now()/*nav_msg->header.stamp*/,
+                                             "/ardrone", "/drone_cam"));
+
+            double roll = 0;
+            double pitch = 0;
+            double yaw = 0;
+            drone_to_dronecam.getBasis().getEulerYPR(yaw, pitch, roll);
+
+
+            std::cout<<"drone_to_cam pose: \n x: "<< drone_to_dronecam.getOrigin().getX() <<"\n y: "<< drone_to_dronecam.getOrigin().getY() <<"\n z: " << drone_to_dronecam.getOrigin().getZ() <<"\n roll: "<< roll*180/M_PI <<"\n pitch: "<< pitch*180/M_PI <<"\n yaw: "<< yaw*180/M_PI<<std::endl;
+
+
+
 
 
 
@@ -211,7 +232,6 @@ int main(int argc, char **argv) {
              }
 //             marker.points.push_back(marker.points[0]);
              pub_markers.publish(marker);
-
 
 
         }

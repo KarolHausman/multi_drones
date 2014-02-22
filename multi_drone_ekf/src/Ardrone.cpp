@@ -8,6 +8,71 @@
 #include "multi_drone_ekf/Ardrone.h"
 
 
+void Ardrone::tagCBcalibration(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
+
+    int tag_cnt = tag_msg->tag_count;
+
+    if (tag_cnt == 0)
+        return;
+
+    for (int i = 0; i < tag_cnt; ++i) {
+        if (marker == tag_msg->tags[i].id)
+            ROS_INFO(
+                        "Found tag  %i (cf: %.3f)", tag_msg->tags[i].id, tag_msg->tags[i].cf);
+    }
+
+    for (int i = 0; i < tag_cnt; ++i) {
+
+        multi_drone_ekf::Tag tag = tag_msg->tags[i];
+
+
+
+        // detection is too unsure
+        if (tag.cf < 0.5)
+            continue;
+
+
+
+
+
+        double trans_x_ = tag.xMetric;
+        double trans_y_ = tag.yMetric;
+        double trans_z_ = tag.zMetric;
+        double rot_z_ = -tag.yRot;
+        double rot_y_ = -tag.xRot;
+        double rot_x_ = tag.zRot;
+
+
+
+        btVector3 trans_around_y(0,0,0);
+
+        btQuaternion rot_around_y;
+        rot_around_y.setEulerZYX(0,-M_PI/2,0);
+
+        tf::Transform pose_around_y;
+
+
+
+        pose_around_y.setOrigin(trans_around_y);
+        pose_around_y.setRotation(rot_around_y);
+
+        btVector3 translation(trans_x_,trans_y_,trans_z_);
+        btQuaternion rotation;
+        rotation.setEulerZYX(rot_z_, rot_y_,rot_x_);
+
+
+        if (tag.id==marker){
+
+
+            tag_pose_calibration_.setOrigin(translation);
+            tag_pose_calibration_.setRotation(rotation);
+            tag_pose_calibration_ = tag_pose_calibration_*pose_around_y;
+
+        }
+    }
+}
+
+
 void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
     int tag_cnt = tag_msg->tag_count;
@@ -139,6 +204,7 @@ void Ardrone::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
                 state_pose_.setRotation(newRotation);
                 btVector3 newOrigin(kalman_filter_->state_(0),kalman_filter_->state_(1),distZ_);
                 state_pose_.setOrigin(newOrigin);
+//                delete sensorModel;
             }
 
 
@@ -251,6 +317,11 @@ Ardrone::Ardrone(const uint& marker_nr) {
 
     boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&Ardrone::tagCB, this, _1, marker_nr) );
     sub_tags_ = nh_.subscribe("/tags", 100,  tag_callback);
+
+    boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback_calibration( boost::bind(&Ardrone::tagCBcalibration, this, _1, 12) );
+    sub_tags_calibration_ = nh_.subscribe("/drone/tags", 100,  tag_callback_calibration);
+
+
     prevTime_ = 0;
     tag_seen_first_time_ = false;
     navCB_done_ = false;

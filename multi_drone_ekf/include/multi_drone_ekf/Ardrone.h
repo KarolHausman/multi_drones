@@ -30,12 +30,14 @@ struct Ardrone {
 	ros::NodeHandle nh_;
     ros::Subscriber sub_nav_;
     ros::Subscriber sub_tags_;
+    ros::Subscriber sub_tags_calibration_;
     ExtendedKalmanFilter* kalman_filter_;
     ranav::Rotor3dMotionModel motionModel;
     ranav::Marker3dSensorModel* sensorModel;
 
 
     tf::Transform tag_pose_;
+    tf::Transform tag_pose_calibration_;
     tf::Transform drone_in_marker_coord_;
 
     bool tag_seen_first_time_;
@@ -57,6 +59,9 @@ struct Ardrone {
 
 
     void tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker);
+
+    void tagCBcalibration(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker);
+
 
     void navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg);
 
