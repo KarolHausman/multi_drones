@@ -61,10 +61,9 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
 
     if (tag_cnt == 0)
         return;
-    std::cout << "--------------TAG CB-----------------" << std::endl;
 
     for (int i = 0; i < tag_cnt; ++i) {
-        ROS_INFO("Found tag  %i (cf: %.3f) for ID = %i", tag_msg->tags[i].id, tag_msg->tags[i].cf, ardroneId);
+        ROS_DEBUG("Found tag  %i (cf: %.3f) for ID = %i", tag_msg->tags[i].id, tag_msg->tags[i].cf, ardroneId);
 
         multi_drone_ekf::Tag tag = tag_msg->tags[i];
 
@@ -103,7 +102,6 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
 
 void ArdroneRosSync::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, int ardroneId)
 {
-    std::cout << "--------------NAV CB-----------------" << std::endl;
 
     ROS_DEBUG_STREAM(
                 "------------------------------------------ \n"
@@ -240,45 +238,45 @@ void ArdroneRosSync::checkCycle() {
   globalMeasurements.clear();
 
 
-  std::cout << "-------------------ODOMETRY: ---------------------------------" << std::endl;
-  for(std::vector<MultiAgent3dNavigation::Odometry3D>::iterator o_it = odometry.begin(); o_it != odometry.end(); ++o_it)
-  {
-      std::cout << "Agent ID= " << o_it->id << std::endl;
-      std::cout << "Agent Transform: " << std::endl;
-      std::cout <<"x: " << o_it->movement.getOrigin().getX() << std::endl;
-      std::cout <<"y: " << o_it->movement.getOrigin().getY() << std::endl;
-      std::cout <<"z: " << o_it->movement.getOrigin().getZ() << std::endl;
-      double roll, pitch, yaw;
-      o_it->movement.getBasis().getRPY(roll, pitch, yaw);
-      std::cout <<"roll: " << roll << std::endl;
-      std::cout <<"pitch: " << pitch << std::endl;
-      std::cout <<"yaw: " << yaw << std::endl;
+//  std::cout << "-------------------ODOMETRY: ---------------------------------" << std::endl;
+//  for(std::vector<MultiAgent3dNavigation::Odometry3D>::iterator o_it = odometry.begin(); o_it != odometry.end(); ++o_it)
+//  {
+//      std::cout << "Agent ID= " << o_it->id << std::endl;
+//      std::cout << "Agent Transform: " << std::endl;
+//      std::cout <<"x: " << o_it->movement.getOrigin().getX() << std::endl;
+//      std::cout <<"y: " << o_it->movement.getOrigin().getY() << std::endl;
+//      std::cout <<"z: " << o_it->movement.getOrigin().getZ() << std::endl;
+//      double roll, pitch, yaw;
+//      o_it->movement.getBasis().getRPY(roll, pitch, yaw);
+//      std::cout <<"roll: " << roll << std::endl;
+//      std::cout <<"pitch: " << pitch << std::endl;
+//      std::cout <<"yaw: " << yaw << std::endl;
 
-  }
+//  }
 
 
-  std::cout << "-------------------MEASUREMENTS: -------------------------------" <<std::endl;
-  std::cout << "MEASUREMENTS SIZE: " << measurements.size() << std::endl;
-  for(std::vector<MultiAgent3dNavigation::Measurement3D>::iterator m_it = measurements.begin(); m_it != measurements.end(); ++m_it)
-  {
-      std::cout << std::endl << "From ID= " << m_it->fromId << std::endl;
-      std::cout << "To ID= " << m_it->toId << std::endl;
-      std::cout << "Measurement Transform: " << std::endl;
-      std::cout <<"x: " << m_it->measurement.getOrigin().getX() << std::endl;
-      std::cout <<"y: " << m_it->measurement.getOrigin().getY() << std::endl;
-      std::cout <<"z: " << m_it->measurement.getOrigin().getZ() << std::endl;
-      double roll, pitch, yaw;
-      m_it->measurement.getBasis().getRPY(roll, pitch, yaw);
-      std::cout <<"roll: " << roll << std::endl;
-      std::cout <<"pitch: " << pitch << std::endl;
-      std::cout <<"yaw: " << yaw << std::endl;
+//  std::cout << "-------------------MEASUREMENTS: -------------------------------" <<std::endl;
+//  std::cout << "MEASUREMENTS SIZE: " << measurements.size() << std::endl;
+//  for(std::vector<MultiAgent3dNavigation::Measurement3D>::iterator m_it = measurements.begin(); m_it != measurements.end(); ++m_it)
+//  {
+//      std::cout << std::endl << "From ID= " << m_it->fromId << std::endl;
+//      std::cout << "To ID= " << m_it->toId << std::endl;
+//      std::cout << "Measurement Transform: " << std::endl;
+//      std::cout <<"x: " << m_it->measurement.getOrigin().getX() << std::endl;
+//      std::cout <<"y: " << m_it->measurement.getOrigin().getY() << std::endl;
+//      std::cout <<"z: " << m_it->measurement.getOrigin().getZ() << std::endl;
+//      double roll, pitch, yaw;
+//      m_it->measurement.getBasis().getRPY(roll, pitch, yaw);
+//      std::cout <<"roll: " << roll << std::endl;
+//      std::cout <<"pitch: " << pitch << std::endl;
+//      std::cout <<"yaw: " << yaw << std::endl;
 
-      if((m_it->fromId == -1) && (m_it->toId == 1))
-      {
-          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/world_check"));
-      }
+//      if((m_it->fromId == -1) && (m_it->toId == 1))
+//      {
+//          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/world_check"));
+//      }
 
-  }
+//  }
 
   // call navigation function
   std::vector<geometry_msgs::Twist> control;
