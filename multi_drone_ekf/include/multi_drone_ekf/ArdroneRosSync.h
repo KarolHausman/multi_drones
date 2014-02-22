@@ -34,9 +34,14 @@ protected:
     tf::Transform odometry;
     tf::Transform measurement;
   };
+
   std::map<int, Agent> agents;
   ros::Time lastCycle; //!< the time when the last cycle was executed
   double cycleDt; //!< duration of one cycle
+  std::vector<ros::Subscriber> sub_tags; //!< tags subscriber
+  std::vector<ros::Subscriber> sub_navs; //!< navdata subscriber
+
+
 
   MultiAgent3dNavigation *navigation;
 };

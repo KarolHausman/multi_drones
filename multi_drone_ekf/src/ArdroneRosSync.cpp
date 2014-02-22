@@ -3,9 +3,28 @@
 
 ArdroneRosSync::ArdroneRosSync(ros::NodeHandle &nh)
 {
-//    boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, marker_nr) );
+    //create agent map
+    Agent drone_observer;
+    drone_observer.markerId = 1;
+    drone_observer.ardroneId = 1;
+    agents.insert(std::make_pair(drone_observer.ardroneId, drone_observer));
 
 
+    std::map<int, Agent>::iterator iter;
+    for (iter = agents.begin(); iter != agents.end(); ++iter)
+    {
+        boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, iter->second.ardroneId) );
+        std::stringstream ss;
+        ss << iter->second.ardroneId;
+        std::string tag_topic = "/" + ss.str() + "/tags";
+        ros::Subscriber sub_tag = nh.subscribe(tag_topic, 100, tag_callback);
+        sub_tags.push_back(sub_tag);
+
+        boost::function<void (const multi_drone_ekf::NavdataConstPtr&)> nav_callback( boost::bind(&ArdroneRosSync::navCB, this, _1, iter->second.ardroneId) );
+        std::string nav_topic = "/" + ss.str() + "/navdata";
+        ros::Subscriber sub_nav = nh.subscribe(nav_topic, 100, nav_callback);
+        sub_navs.push_back(sub_nav);
+    }
 }
 
 
@@ -18,7 +37,7 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint ar
         return;
 
     for (int i = 0; i < tag_cnt; ++i) {
-        if (ardroneId == tag_msg->tags[i].id)
+        if (agents[ardroneId].markerId == tag_msg->tags[i].id)
             ROS_DEBUG("Found tag  %i (cf: %.3f)", tag_msg->tags[i].id, tag_msg->tags[i].cf);
     }
 
@@ -49,7 +68,7 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint ar
 
 
 
-        if (tag.id==ardroneId){
+        if (tag.id == agents[ardroneId].markerId){
 
             tf::Transform tag_pose;
             tag_pose.setOrigin(translation);
