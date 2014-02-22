@@ -34,7 +34,7 @@ public:
   //! downproject all to 2D
   //! apply odometry in EKF
   //! check which measurements have to be used according to current topology and apply them in EKF
-  void navigate(const std::vector<Measurement3D> &measurements, const std::vector<Odometry3D> &odometry, std::vector<geometry_msgs::Twist> &control, std::vector<tf::Transform> stateEstimate);
+  void navigate(const std::vector<Measurement3D> &measurements, const std::vector<Odometry3D> &odometry, std::vector<geometry_msgs::Twist> &control, std::vector<tf::Transform> &stateEstimate);
 
 protected:
   // 3D navigation stuff
