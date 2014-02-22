@@ -273,6 +273,11 @@ void ArdroneRosSync::checkCycle() {
       std::cout <<"pitch: " << pitch << std::endl;
       std::cout <<"yaw: " << yaw << std::endl;
 
+      if((m_it->fromId == -1) && (m_it->toId == 1))
+      {
+          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/world_check"));
+      }
+
   }
 
 //  // call navigation function
