@@ -47,5 +47,9 @@ int main(int argc, char **argv) {
 
   ArdroneRosSync rosSync(nh_, &navigation);
 
+  while (nh_.ok()) {
+      ros::spinOnce();
+  }
+
   return 0;
 }
