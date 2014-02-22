@@ -20,57 +20,27 @@ Marker3dSensorModel::~Marker3dSensorModel()
 
 Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const tf::Transform& measurement, const tf::Transform& world_to_cam) const
 {
-    double c_yaw = 0;
-    double c_pitch = 0;
-    double c_roll = 0;
+  double roll, pitch, yaw;
+  tf::Quaternion q;
 
-    world_to_cam.getBasis().getEulerYPR(c_yaw,c_pitch,c_roll);
-
-    double c_x =0;double c_y=0; //double c_z=0;
-
-    c_x = world_to_cam.getOrigin().getX();
-    c_y = world_to_cam.getOrigin().getY();
-//    c_z = world_to_cam.getOrigin().getZ();
-
-//    tf::Transform cam_to_marker;
-//    tf::Vector3 origin(measurement(0), measurement(1), measurement(2));
-//    cam_to_marker.setOrigin(origin);
-//    tf::Quaternion rotation;
-//    rotation.setRPY(measurement(3),measurement(4), measurement(5));
-//    cam_to_marker.setRotation(rotation);
-
-    tf::Transform world_to_marker = world_to_cam * measurement;
-
-    double m_yaw = 0;
-    double m_pitch = 0;
-    double m_roll = 0;
-
-    world_to_marker.getBasis().getEulerYPR(m_yaw,m_pitch,m_roll);
-
-    double m_x =0;double m_y=0; //double m_z=0;
-
-    m_x = world_to_marker.getOrigin().getX();
-    m_y = world_to_marker.getOrigin().getY();
-//    m_z = world_to_marker.getOrigin().getZ();
+  tf::Transform world_to_marker = world_to_cam * measurement;
 
     // 2D camera position wrt. world or agent
-    tf::Quaternion c_2d_rotation;
-    c_2d_rotation.setRPY(0,0,c_yaw);
-    tf::Transform c_2d(c_2d_rotation, tf::Vector3(c_x,c_y,0));
+//    world_to_cam.getBasis().getEulerYPR(yaw, pitch, roll);
+//    q.setRPY(0,0,yaw);
+//    tf::Transform c_2d(q, tf::Vector3(world_to_cam.getOrigin().getX(), world_to_cam.getOrigin().getY(), 0));
+    // HACK: using 2D camera pose that is not the 3D pose for having a circular field of view of tilted cameras by shifting the virtual 2D camera position
+  q.setRPY(0, 0, cameraPose(2));
+  tf::Transform world_to_cam2d(q, tf::Vector3(cameraPose(0), cameraPose(1), 0));
 
-    tf::Quaternion m_2d_rotation;
-    m_2d_rotation.setRPY(0,0,m_yaw);
-    tf::Transform m_2d(m_2d_rotation, tf::Vector3(m_x,m_y,0));
+  world_to_marker.getBasis().getEulerYPR(yaw, pitch, roll);
+  q.setRPY(0,0,yaw);
+  tf::Transform world_to_marker2d(q, tf::Vector3(world_to_marker.getOrigin().getX(), world_to_marker.getOrigin().getY(), 0));
 
-    tf::Transform z_2d = c_2d.inverse()*m_2d;
-
-    Eigen::VectorXd measurement_3dog = Eigen::Vector3d::Zero();
-
-    measurement_3dog(0) = z_2d.getOrigin().getX();
-    measurement_3dog(1) = z_2d.getOrigin().getY();
-    measurement_3dog(2) = tf::getYaw(z_2d.getRotation());
-
-    return measurement_3dog;
+  tf::Transform projected_measurement = world_to_cam2d.inverse()*world_to_marker2d;
+  return Eigen::Vector3d(projected_measurement.getOrigin().getX(),
+                         projected_measurement.getOrigin().getY(),
+                         tf::getYaw(projected_measurement.getRotation()));
 }
 
 void Marker3dSensorModel::setNoiseCov(const tf::Transform& world_to_cam, const tf::Transform& measurement)

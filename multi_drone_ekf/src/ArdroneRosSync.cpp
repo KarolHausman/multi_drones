@@ -12,14 +12,14 @@ navigation(navigation)
     agent.markerId = 1; // TODO: parameter
     agent.ardroneId = 1; // TODO: parameter
     agents[agent.ardroneId] = agent;
-    globalId = -1; // TODO: parameter
-    targetMarkerId = 123; // TODO: parameter
+    globalId = 100; // TODO: parameter
+    targetMarkerId = 9; // TODO: parameter
 
     { // subscribe to global camera
       boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, globalId) );
       std::stringstream ss;
       ss << globalId;
-      std::string tag_topic = "/" + ss.str() + "/tags";
+      std::string tag_topic = "/node" + ss.str() + "/tags";
       sub_tags.push_back(nh.subscribe(tag_topic, 100, tag_callback));
     }
     // subscribe to all agent's cameras and create control publishers
@@ -29,15 +29,19 @@ navigation(navigation)
         boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, iter->second.ardroneId) );
         std::stringstream ss;
         ss << iter->second.ardroneId;
-        std::string tag_topic = "/" + ss.str() + "/tags";
+        std::string tag_topic = "/node" + ss.str() + "/tags";
         sub_tags.push_back(nh.subscribe(tag_topic, 100, tag_callback));
 
         boost::function<void (const multi_drone_ekf::NavdataConstPtr&)> nav_callback( boost::bind(&ArdroneRosSync::navCB, this, _1, iter->second.ardroneId) );
-        std::string nav_topic = "/" + ss.str() + "/navdata";
+        std::string nav_topic = "/node" + ss.str() + "/navdata";
         sub_navs.push_back(nh.subscribe(nav_topic, 100, nav_callback));
 
-        iter->second.pub_control = nh.advertise<geometry_msgs::Twist>("/" + ss.str() + "/cmd_vel", 1);
+        iter->second.pub_control = nh.advertise<geometry_msgs::Twist>("/node" + ss.str() + "/cmd_vel", 1);
     }
+}
+
+ArdroneRosSync::~ArdroneRosSync() {
+
 }
 
 
@@ -159,12 +163,24 @@ void ArdroneRosSync::checkCycle() {
 
   // compute incremental odometry, set last_odometry
   std::vector<MultiAgent3dNavigation::Odometry3D> odometry;
-  int id = 0;
+  MultiAgent3dNavigation::Odometry3D odo;
+  odo.id = 0;
   for (std::map<int, Agent>::iterator it = agents.begin();
-      it != agents.end(); ++it, ++id) {
-    MultiAgent3dNavigation::Odometry3D odo;
-    odo.id = id;
-    odo.movement = it->second.last_odometry.inverse() * it->second.odometry;
+      it != agents.end(); ++it, ++odo.id) {
+    // odometry transform contains: visual_odometry_x, visual_odometry_y, sonar_height_z, imu_roll, imu_pitch, visual_odometry_yaw
+    double z = it->second.odometry.getOrigin().getZ();
+    double roll, pitch, yaw;
+    it->second.last_odometry.getBasis().getEulerYPR(yaw, pitch, roll);
+    tf::Quaternion q;
+    q.setRPY(0, 0, yaw);
+    tf::Transform lastOdo2d(q, tf::Vector3(it->second.last_odometry.getOrigin().getX(), it->second.last_odometry.getOrigin().getY(), 0));
+    it->second.odometry.getBasis().getEulerYPR(yaw, pitch, roll);
+    q.setRPY(yaw, 0, 0);
+    tf::Transform odo2d(q, tf::Vector3(it->second.odometry.getOrigin().getX(), it->second.odometry.getOrigin().getY(), 0));
+    odo.movement = lastOdo2d.inverse() * odo2d;
+    q.setRPY(roll, pitch, tf::getYaw(odo.movement.getRotation()));
+    odo.movement.setRotation(q);
+    odo.movement.getOrigin().setZ(z);
     it->second.last_odometry = it->second.odometry;
     odometry.push_back(odo);
   }
@@ -192,11 +208,28 @@ void ArdroneRosSync::checkCycle() {
       }
     }
   }
+  measurement.fromId = -1;
+  for (std::vector<std::pair<int, tf::Transform> >::iterator m = globalMeasurements.begin();
+      m != globalMeasurements.end(); ++m) {
+    if (m->first == targetMarkerId) {
+      measurement.toId = agents.size(); // target has ID N (for N agents)
+      measurement.measurement = m->second;
+      measurements.push_back(measurement);
+    }
+    measurement.toId = 0;
+    for (std::map<int, Agent>::iterator ag = agents.begin();
+        ag != agents.end(); ++ag, ++measurement.toId) {
+      if (m->first == ag->second.markerId) {
+        measurement.measurement = m->second;
+        measurements.push_back(measurement);
+      }
+    }
+  }
 
   // call navigation function
   std::vector<geometry_msgs::Twist> control;
   std::vector<tf::Transform> stateEstimate;
-//  navigation->navigate(measurements, odometry, control, stateEstimate); // TODO
+  navigation->navigate(measurements, odometry, control, stateEstimate);
 
   // publish state estimate
   assert(stateEstimate.size() == agents.size()+1);

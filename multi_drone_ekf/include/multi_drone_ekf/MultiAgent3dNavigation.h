@@ -17,7 +17,7 @@ namespace ranav {
 class MultiAgent3dNavigation {
 public:
   //! fill TargetTrackingController::Topology::allModels with appropriate Marker3dSensorModels
-  MultiAgent3dNavigation(const tf::Transform& world_to_cam, const tf::Transform& drone_to_marker, const tf::Transform& drone_to_front_cam);
+  MultiAgent3dNavigation(const tf::Transform& world_to_cam, const tf::Transform& drone_to_marker, const tf::Transform& drone_to_front_cam, const ranav::TParam &p);
   ~MultiAgent3dNavigation();
 
   double getCycleDt() { return params("estimation/motionDt").toDouble(); }
@@ -37,12 +37,17 @@ public:
   void navigate(const std::vector<Measurement3D> &measurements, const std::vector<Odometry3D> &odometry, std::vector<geometry_msgs::Twist> &control, std::vector<tf::Transform> &stateEstimate);
 
 protected:
+  struct AddOn3d {
+    AddOn3d(double r, double p, double z) : roll(r), pitch(p), z(z) {}
+    double roll, pitch, z;
+  };
+  std::vector<AddOn3d> addOn3d; // for every agent
+  void getStateEstimate(std::vector<tf::Transform> &stateEstimate);
+
   // 3D navigation stuff
   tf::Transform world_to_cam;
   tf::Transform drone_to_marker;
   tf::Transform drone_to_front_cam;
-  tf::Transform cam_to_world2d;
-  tf::Transform drone_to_marker2d;
 
   // 2D navigation stuff
   ranav::TParam params;
