@@ -30,6 +30,9 @@ int main(int argc, char **argv) {
   TParam p;
   p.loadTree(paramfile);
 
+  ros::init(argc, argv, "multi_drone_control");
+
+
   Camera camera(12);
   ros::NodeHandle nh_;
   ros::Rate r(60);

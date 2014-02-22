@@ -38,6 +38,7 @@ public:
 
 protected:
   struct AddOn3d {
+      AddOn3d() : roll(0), pitch(0), z(0) {}
     AddOn3d(double r, double p, double z) : roll(r), pitch(p), z(z) {}
     double roll, pitch, z;
   };

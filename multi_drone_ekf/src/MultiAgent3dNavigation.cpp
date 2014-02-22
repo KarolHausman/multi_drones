@@ -98,6 +98,8 @@ MultiAgent3dNavigation::MultiAgent3dNavigation(const tf::Transform& world_to_cam
   ttc = new ranav::TargetTrackingController();
   ttc->init(p);
 
+  addOn3d.resize(motionModel->getNumAgents());
+
   this->world_to_cam = world_to_cam;
   this->drone_to_marker = drone_to_marker;
   this->drone_to_front_cam = drone_to_front_cam;

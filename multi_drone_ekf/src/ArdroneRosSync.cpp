@@ -54,11 +54,7 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
         return;
 
     for (int i = 0; i < tag_cnt; ++i) {
-        if (agents[ardroneId].markerId == (int)tag_msg->tags[i].id)
-            ROS_DEBUG("Found tag  %i (cf: %.3f)", tag_msg->tags[i].id, tag_msg->tags[i].cf);
-    }
-
-    for (int i = 0; i < tag_cnt; ++i) {
+        ROS_DEBUG("Found tag  %i (cf: %.3f)", tag_msg->tags[i].id, tag_msg->tags[i].cf);
 
         multi_drone_ekf::Tag tag = tag_msg->tags[i];
 
@@ -161,6 +157,8 @@ void ArdroneRosSync::checkCycle() {
   }
   lastCycle = now;
 
+  assert(agents.size() == 1);
+
   // compute incremental odometry, set last_odometry
   std::vector<MultiAgent3dNavigation::Odometry3D> odometry;
   MultiAgent3dNavigation::Odometry3D odo;
@@ -237,7 +235,8 @@ void ArdroneRosSync::checkCycle() {
   for (std::map<int, Agent>::iterator it = agents.begin();
       it != agents.end(); ++it, ++i) {
     std::stringstream ss;
-    ss << "/" << it->second.ardroneId;
+    ss << "/node" << it->second.ardroneId;
+    ROS_INFO("Transform called");
     transform_broadcaster.sendTransform(tf::StampedTransform(stateEstimate[i], now, "/world", ss.str()));
   }
 

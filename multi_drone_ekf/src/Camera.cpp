@@ -85,7 +85,7 @@ Camera::Camera(uint marker_nr) {
     counter_ = 0;
     avg_number_ = 10;
     boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&Camera::tagCB, this, _1, marker_nr) );
-    sub_tags_ = nh_.subscribe("/tags", 100,  tag_callback);
+    sub_tags_ = nh_.subscribe("node100/tags", 100,  tag_callback);
 
 }
 
