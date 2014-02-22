@@ -71,7 +71,7 @@ void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurem
       marker3dmodel->setNoiseCov(camPose, m_it->second.measurement);
 
       Eigen::VectorXd measurement_2d = marker3dmodel->downProjectMeasurement(m_it->second.measurement, camPose);
-      ROS_INFO("Integrating measurement of model (%d, %d) with measurement dim %d", m_it->second.fromId, m_it->second.toId, measurement_2d.size());
+      ROS_INFO("Integrating measurement of model (%d, %d) with measurement dim %d", m_it->second.fromId, m_it->second.toId, (int)measurement_2d.size());
       ekf->correct(measurement_2d, *(*s_it));
     }
   }
@@ -130,7 +130,7 @@ MultiAgent3dNavigation::MultiAgent3dNavigation(const tf::Transform& world_to_cam
   sm->setCameraPose(drone_to_front_cam2d + Eigen::Vector3d(1.0, 0, 0)); // HACK: move virtual 2D camera pose of tilted camera to have a circular field of view around (0, 0)
   models()[ranav::Index(0, 1)] = sm;
   ttc->getTopology().setAllSensorModels(models);
-    sensorModels = ttc->getTopology().getSensorModelsNonconst();
+  sensorModels = ttc->getTopology().getSensorModelsNonconst();
 }
 
 MultiAgent3dNavigation::~MultiAgent3dNavigation() {

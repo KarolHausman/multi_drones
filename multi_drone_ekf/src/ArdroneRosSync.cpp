@@ -293,6 +293,7 @@ void ArdroneRosSync::checkCycle() {
     ROS_INFO("Transform called");
     transform_broadcaster.sendTransform(tf::StampedTransform(stateEstimate[i], now, "/world", ss.str()));
   }
+  transform_broadcaster.sendTransform(tf::StampedTransform(stateEstimate.back(), now, "/world", "/node_target"));
 
   // publish controls (not in first test)
   assert(control.size() == agents.size());
