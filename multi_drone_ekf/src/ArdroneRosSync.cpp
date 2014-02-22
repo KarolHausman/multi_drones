@@ -61,6 +61,7 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
 
     if (tag_cnt == 0)
         return;
+    std::cout << "--------------TAG CB-----------------" << std::endl;
 
     for (int i = 0; i < tag_cnt; ++i) {
         ROS_INFO("Found tag  %i (cf: %.3f) for ID = %i", tag_msg->tags[i].id, tag_msg->tags[i].cf, ardroneId);
@@ -102,6 +103,7 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
 
 void ArdroneRosSync::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, int ardroneId)
 {
+    std::cout << "--------------NAV CB-----------------" << std::endl;
 
     ROS_DEBUG_STREAM(
                 "------------------------------------------ \n"
@@ -130,6 +132,7 @@ void ArdroneRosSync::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, int 
     odometry.setRotation(odom_rot);
 
     agents[ardroneId].odometry = odometry;
+
 
     checkCycle();
 }
