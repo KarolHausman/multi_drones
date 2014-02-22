@@ -53,27 +53,22 @@ Eigen::VectorXd Marker3dSensorModel::downProjectMeasurement(const Eigen::VectorX
     m_y = world_to_marker.getOrigin().getY();
 //    m_z = world_to_marker.getOrigin().getZ();
 
-    tf::Transform c_3d,z_3d,m_3d;
+    // 2D camera position wrt. world or agent
+    tf::Quaternion c_2d_rotation;
+    c_2d_rotation.setRPY(0,0,c_yaw);
+    tf::Transform c_2d(c_2d_rotation, tf::Vector3(c_x,c_y,0));
 
-    tf::Vector3 c_3d_origin(c_x,c_y,0);
-    tf::Quaternion c_3d_rotation;
-    c_3d_rotation.setRPY(0,0,c_yaw);
-    c_3d.setOrigin(c_3d_origin);
-    c_3d.setRotation(c_3d_rotation);
+    tf::Quaternion m_2d_rotation;
+    m_2d_rotation.setRPY(0,0,m_yaw);
+    tf::Transform m_2d(m_2d_rotation, tf::Vector3(m_x,m_y,0));
 
-    tf::Vector3 m_3d_origin(m_x,m_y,0);
-    tf::Quaternion m_3d_rotation;
-    m_3d_rotation.setRPY(0,0,m_yaw);
-    m_3d.setOrigin(m_3d_origin);
-    m_3d.setRotation(m_3d_rotation);
-
-    z_3d = c_3d.inverse()*m_3d;
+    tf::Transform z_2d = c_2d.inverse()*m_2d;
 
     Eigen::VectorXd measurement_3dog = Eigen::Vector3d::Zero();
 
-    measurement_3dog(0) = z_3d.getOrigin().getX();
-    measurement_3dog(1) = z_3d.getOrigin().getY();
-    measurement_3dog(2) = tf::getYaw(z_3d.getRotation());
+    measurement_3dog(0) = z_2d.getOrigin().getX();
+    measurement_3dog(1) = z_2d.getOrigin().getY();
+    measurement_3dog(2) = tf::getYaw(z_2d.getRotation());
 
     return measurement_3dog;
 }
