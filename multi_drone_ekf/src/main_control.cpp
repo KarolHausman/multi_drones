@@ -32,16 +32,15 @@ int main(int argc, char **argv) {
 
   ros::init(argc, argv, "multi_drone_control");
 
-
   Camera camera(12);
   ros::NodeHandle nh_;
   ros::Rate r(60);
   while (nh_.ok() && !camera.pose_set_) {
-      ros::spinOnce();
+    ros::spinOnce();
   }
 
   tf::Quaternion q;
-  q.setRPY(0, M_PI/4, 0);
+  q.setRPY(0, M_PI / 4, 0);
   tf::Transform drone_to_front_cam(q, tf::Vector3(0.09, 0, 0));
   q.setRPY(0, 0, 0);
   tf::Transform drone_to_marker(q, tf::Vector3(0, 0, 0.15));
@@ -50,16 +49,16 @@ int main(int argc, char **argv) {
 
   ArdroneRosSync rosSync(nh_, &navigation);
 
-  tf::TransformBroadcaster br;
-
+  tf::TransformBroadcaster transform_broadcaster;
 
   while (nh_.ok()) {
-      ros::spinOnce();
-      br.sendTransform(
-                  tf::StampedTransform(camera.tag_pose_.inverse(), ros::Time::now(), "/world",
-                                       "/kinect"));
-      br.sendTransform(tf::StampedTransform(drone_to_marker.inverse() * drone_to_front_cam, ros::Time::now(), "/beta_marker", "/ardrone_front_cam"));
-      r.sleep();
+    ros::spinOnce();
+    transform_broadcaster.sendTransform(tf::StampedTransform(camera.tag_pose_.inverse(), ros::Time::now(), "/world", "/kinect"));
+    if (MultiAgent3dNavigation::broadcast_3d_measurements) {
+      transform_broadcaster.sendTransform(
+          tf::StampedTransform(drone_to_marker.inverse() * drone_to_front_cam, ros::Time::now(), "/beta_marker", "/ardrone_front_cam"));
+    }
+    r.sleep();
   }
 
   return 0;

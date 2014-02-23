@@ -76,28 +76,24 @@ void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurem
       Eigen::VectorXd measurement_2d = marker3dmodel->downProjectMeasurement(m_it->second.measurement, camPose);
       ROS_INFO("Integrating measurement of model (%d, %d) with measurement dim %d", m_it->second.fromId, m_it->second.toId, (int)measurement_2d.size());
 
-      tf::Quaternion q;
-      q.setRPY(0, 0, 0);
-      if (measurement_2d.size() == 3)
-        q.setRPY(0, 0, measurement_2d(2));
-      tf::Transform measurement_2d_extend(q, tf::Vector3(measurement_2d(0), measurement_2d(1), 0));
-      if (m_it->second.fromId == 0 && m_it->second.toId == 1) {
+      // transform broadcasting for visualization and debugging
+      if (broadcast_projected_measurements) {
+        tf::Quaternion q;
+        q.setRPY(0, 0, 0);
+        if (measurement_2d.size() == 3)
+          q.setRPY(0, 0, measurement_2d(2));
+        tf::Transform measurement_2d_extend(q, tf::Vector3(measurement_2d(0), measurement_2d(1), 0));
+        if (m_it->second.fromId == 0 && m_it->second.toId == 1) {
+          transform_broadcaster.sendTransform(tf::StampedTransform(drone_to_front_cam_2d, ros::Time::now(), "/node1", "/front_cam_projected"));
           transform_broadcaster.sendTransform(
-                      tf::StampedTransform(drone_to_front_cam_2d, ros::Time::now(), "/node1",
-                                           "/front_cam_projected"));
+              tf::StampedTransform(measurement_2d_extend, ros::Time::now(), "/front_cam_projected", "/target_projected_measurement"));
+        }
+        if (m_it->second.fromId == -1 && m_it->second.toId == 0) {
+          transform_broadcaster.sendTransform(tf::StampedTransform(world_to_cam_2d, ros::Time::now(), "/world", "/world_cam_projected"));
           transform_broadcaster.sendTransform(
-                  tf::StampedTransform(measurement_2d_extend, ros::Time::now(), "/front_cam_projected",
-                                       "/target_projected_measurement"));
+              tf::StampedTransform(measurement_2d_extend, ros::Time::now(), "/world_cam_projected", "/node1_projected_measurement"));
+        }
       }
-      if (m_it->second.fromId == -1 && m_it->second.toId == 0) {
-        transform_broadcaster.sendTransform(
-                  tf::StampedTransform(world_to_cam_2d, ros::Time::now(), "/world",
-                                       "/world_cam_projected"));
-        transform_broadcaster.sendTransform(
-                  tf::StampedTransform(measurement_2d_extend, ros::Time::now(), "/world_cam_projected",
-                                       "/node1_projected_measurement"));
-      }
-
 
       ekf->correct(measurement_2d, *(*s_it));
     }
@@ -105,8 +101,8 @@ void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurem
 
   getStateEstimate(stateEstimate);
 
-  //Eigen::VectorXd controlVec = ttc->getControl(ekf, motionModel, ttc->getTopology().getSensorModels());
   control.resize(nA);
+//  Eigen::VectorXd controlVec = ttc->getControl(ekf, motionModel, ttc->getTopology().getSensorModels());
 //  assert(cSD == 3);
 //  for (unsigned int i=0; i<nA; ++i) {
 //    Eigen::Vector3d c = controlVec.segment(cSD*i, 3);

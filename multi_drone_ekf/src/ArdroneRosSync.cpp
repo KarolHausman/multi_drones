@@ -22,8 +22,6 @@ navigation(navigation)
     pose_around_y.setOrigin(trans_around_y);
     pose_around_y.setRotation(rot_around_y);
 
-
-
     { // subscribe to global camera
       boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, globalId) );
       std::stringstream ss;
@@ -78,9 +76,6 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
         double rot_y_ = -tag.xRot;
         double rot_x_ = tag.zRot;
 
-
-
-
         btVector3 translation(trans_x_,trans_y_,trans_z_);
         btQuaternion rotation;
         rotation.setEulerZYX(rot_z_, rot_y_,rot_x_);
@@ -93,13 +88,11 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
         if (ardroneId == globalId) {
           globalMeasurements.push_back(std::make_pair(tag.id, tag_pose));
 
-          if(tag.id == 12)
-          {
-              transform_broadcaster.sendTransform(
-                          tf::StampedTransform(tag_pose, ros::Time::now(), "/kinect",
-                                               "/world_marker"));
+          if (MultiAgent3dNavigation::broadcast_3d_measurements) {
+            if (tag.id == 12) {
+              transform_broadcaster.sendTransform(tf::StampedTransform(tag_pose, ros::Time::now(), "/kinect", "/world_marker"));
+            }
           }
-
         } else {
           agents[ardroneId].measurements.push_back(std::make_pair(tag.id, tag_pose));
         }
@@ -280,21 +273,19 @@ void ArdroneRosSync::checkCycle() {
 //      std::cout <<"pitch: " << pitch << std::endl;
 //      std::cout <<"yaw: " << yaw << std::endl;
 
-      if((m_it->fromId == -1) && (m_it->toId == 0))
-      {
-          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/beta_marker"));
+    if (MultiAgent3dNavigation::broadcast_3d_measurements) {
+      if ((m_it->fromId == -1) && (m_it->toId == 0)) {
+        transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/beta_marker"));
       }
 
-      if((m_it->fromId == -1) && (m_it->toId == 1))
-      {
-          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/target_marker"));
+      if ((m_it->fromId == -1) && (m_it->toId == 1)) {
+        transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/target_marker"));
       }
 
-      if((m_it->fromId == 0) && (m_it->toId == 1))
-      {
-          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/ardrone_front_cam", "/target_marker_drone"));
+      if ((m_it->fromId == 0) && (m_it->toId == 1)) {
+        transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/ardrone_front_cam", "/target_marker_drone"));
       }
-
+    }
   }
 
   // call navigation function

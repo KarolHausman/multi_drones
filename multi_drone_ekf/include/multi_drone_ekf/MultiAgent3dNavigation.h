@@ -37,6 +37,9 @@ public:
   //! check which measurements have to be used according to current topology and apply them in EKF
   void navigate(const std::vector<Measurement3D> &measurements, const std::vector<Odometry3D> &odometry, std::vector<geometry_msgs::Twist> &control, std::vector<tf::Transform> &stateEstimate);
 
+  static const bool broadcast_3d_measurements = true;
+  static const bool broadcast_projected_measurements = true;
+
 protected:
   struct AddOn3d {
       AddOn3d() : roll(0), pitch(0), z(0) {}
