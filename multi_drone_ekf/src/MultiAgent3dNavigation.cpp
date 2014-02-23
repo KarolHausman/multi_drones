@@ -102,15 +102,14 @@ void MultiAgent3dNavigation::navigate(const std::vector<Measurement3D> &measurem
   getStateEstimate(stateEstimate);
 
   control.resize(nA);
-//  Eigen::VectorXd controlVec = ttc->getControl(ekf, motionModel, ttc->getTopology().getSensorModels());
-//  assert(cSD == 3);
-//  for (unsigned int i=0; i<nA; ++i) {
-//    Eigen::Vector3d c = controlVec.segment(cSD*i, 3);
-//    control[i].linear.x = c(0);
-//    control[i].linear.y = c(1);
-//    control[i].angular.z = c(2);
-//  }
-
+  Eigen::VectorXd controlVec = ttc->getControl(ekf, motionModel, ttc->getTopology().getSensorModels());
+  assert(cSD == 3);
+  for (unsigned int i=0; i<nA; ++i) {
+    Eigen::Vector3d c = controlVec.segment(cSD*i, 3);
+    control[i].linear.x = c(0);
+    control[i].linear.y = c(1);
+    control[i].angular.z = c(2);
+  }
 }
 
 

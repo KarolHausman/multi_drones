@@ -316,6 +316,7 @@ void ArdroneRosSync::checkCycle() {
   i = 0;
   for (std::map<int, Agent>::iterator it = agents.begin();
       it != agents.end(); ++it, ++i) {
-//    it->second.pub_control.publish(control[i]);
+      ROS_INFO("Publishing control of agent %d: %.2f, %.2f, %.2f", i, control[i].linear.x, control[i].linear.y, control[i].angular.z);
+    it->second.pub_control.publish(control[i]);
   }
 }
