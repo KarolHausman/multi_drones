@@ -43,7 +43,8 @@ navigation(navigation)
         std::string nav_topic = "/node" + ss.str() + "/navdata";
         sub_navs.push_back(nh.subscribe(nav_topic, 100, nav_callback));
 
-        iter->second.pub_control = nh.advertise<geometry_msgs::Twist>("/node" + ss.str() + "/cmd_vel", 1);
+//        iter->second.pub_control = nh.advertise<geometry_msgs::Twist>("/node" + ss.str() + "/cmd_vel", 1);
+        iter->second.pub_control = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1); // TODO: use proper topic and remap it to correct drone
     }
 
     publishCommands = false;

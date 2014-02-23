@@ -8,7 +8,8 @@ namespace ranav {
 Marker3dSensorModel::Marker3dSensorModel(int from, int to) : Cam2dSensorModel(from, to)
 {
     noiseCovPrime = Eigen::MatrixXd::Zero(6,6);
-    noiseCovPrime(0,0) = noiseCovPrime(1,1) = noiseCovPrime(2,2) = 0.01;
+    noiseCovPrime(0,0) = 0.1;
+    noiseCovPrime(1,1) = noiseCovPrime(2,2) = 0.01;
     noiseCovPrime(3,3) = noiseCovPrime(4,4) = 0.01;
     noiseCovPrime(5,5) = 0.001;
 }
