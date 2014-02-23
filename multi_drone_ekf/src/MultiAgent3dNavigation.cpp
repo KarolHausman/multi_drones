@@ -134,7 +134,7 @@ MultiAgent3dNavigation::MultiAgent3dNavigation(const tf::Transform& world_to_cam
 
   world_to_cam.getBasis().getEulerYPR(yaw, pitch, roll);
   Eigen::Vector3d world_to_cam2d(world_to_cam.getOrigin().getX(),world_to_cam.getOrigin().getY(), yaw);
-  world_to_cam2d += Eigen::Vector3d(2.5, 0, 0);  // HACK: move virtual 2D camera pose of tilted camera to have a circular field of view around (0, 0)
+  world_to_cam2d += Eigen::Vector3d(2, 0, 0);  // HACK: move virtual 2D camera pose of tilted camera to have a circular field of view around (0, 0)
   tf::Quaternion q;
   q.setRPY(0, 0, world_to_cam2d(2));
   world_to_cam_2d = tf::Transform(q, tf::Vector3(world_to_cam2d(0), world_to_cam2d(1), 0));
