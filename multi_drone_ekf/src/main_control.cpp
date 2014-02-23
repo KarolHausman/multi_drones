@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   }
 
   tf::Quaternion q;
-  q.setRPY(0, -M_PI/4, 0);
+  q.setRPY(0, M_PI/4, 0);
   tf::Transform drone_to_front_cam(q, tf::Vector3(0.09, 0, 0));
   q.setRPY(0, 0, 0);
   tf::Transform drone_to_marker(q, tf::Vector3(0, 0, 0.15));
@@ -58,7 +58,8 @@ int main(int argc, char **argv) {
       br.sendTransform(
                   tf::StampedTransform(camera.tag_pose_.inverse(), ros::Time::now(), "/world",
                                        "/kinect"));
-
+      br.sendTransform(tf::StampedTransform(drone_to_marker.inverse() * drone_to_front_cam, ros::Time::now(), "/beta_marker", "/ardrone_front_cam"));
+      r.sleep();
   }
 
   return 0;

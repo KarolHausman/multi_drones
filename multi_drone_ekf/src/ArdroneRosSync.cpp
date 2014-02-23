@@ -92,6 +92,14 @@ void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ard
 
         if (ardroneId == globalId) {
           globalMeasurements.push_back(std::make_pair(tag.id, tag_pose));
+
+          if(tag.id == 12)
+          {
+              transform_broadcaster.sendTransform(
+                          tf::StampedTransform(tag_pose, ros::Time::now(), "/kinect",
+                                               "/world_marker"));
+          }
+
         } else {
           agents[ardroneId].measurements.push_back(std::make_pair(tag.id, tag_pose));
         }
@@ -180,7 +188,7 @@ void ArdroneRosSync::checkCycle() {
     q.setRPY(0, 0, yaw);
     tf::Transform lastOdo2d(q, tf::Vector3(it->second.last_odometry.getOrigin().getX(), it->second.last_odometry.getOrigin().getY(), 0));
     it->second.odometry.getBasis().getEulerYPR(yaw, pitch, roll);
-    q.setRPY(yaw, 0, 0);
+    q.setRPY(0, 0, yaw);
     tf::Transform odo2d(q, tf::Vector3(it->second.odometry.getOrigin().getX(), it->second.odometry.getOrigin().getY(), 0));
     tf::Transform movement = lastOdo2d.inverse() * odo2d;
     odo.movement2d = Eigen::Vector3d(movement.getOrigin().getX(), movement.getOrigin().getY(), tf::getYaw(movement.getRotation()));
@@ -244,22 +252,22 @@ void ArdroneRosSync::checkCycle() {
 //  {
 //      std::cout << "Agent ID= " << o_it->id << std::endl;
 //      std::cout << "Agent Transform: " << std::endl;
-//      std::cout <<"x: " << o_it->movement.getOrigin().getX() << std::endl;
-//      std::cout <<"y: " << o_it->movement.getOrigin().getY() << std::endl;
-//      std::cout <<"z: " << o_it->movement.getOrigin().getZ() << std::endl;
+//      std::cout <<"x: " << o_it->movement2d(0) << std::endl;
+//      std::cout <<"y: " << o_it->movement2d(1) << std::endl;
+//      std::cout <<"z: " << o_it->movement2d.getOrigin().getZ() << std::endl;
 //      double roll, pitch, yaw;
-//      o_it->movement.getBasis().getRPY(roll, pitch, yaw);
+//      o_it->movement2d.getBasis().getRPY(roll, pitch, yaw);
 //      std::cout <<"roll: " << roll << std::endl;
 //      std::cout <<"pitch: " << pitch << std::endl;
-//      std::cout <<"yaw: " << yaw << std::endl;
+//      std::cout <<"yaw: " << o_it->movement2d(2)<< std::endl;
 
 //  }
 
 
 //  std::cout << "-------------------MEASUREMENTS: -------------------------------" <<std::endl;
 //  std::cout << "MEASUREMENTS SIZE: " << measurements.size() << std::endl;
-//  for(std::vector<MultiAgent3dNavigation::Measurement3D>::iterator m_it = measurements.begin(); m_it != measurements.end(); ++m_it)
-//  {
+  for(std::vector<MultiAgent3dNavigation::Measurement3D>::iterator m_it = measurements.begin(); m_it != measurements.end(); ++m_it)
+  {
 //      std::cout << std::endl << "From ID= " << m_it->fromId << std::endl;
 //      std::cout << "To ID= " << m_it->toId << std::endl;
 //      std::cout << "Measurement Transform: " << std::endl;
@@ -272,12 +280,22 @@ void ArdroneRosSync::checkCycle() {
 //      std::cout <<"pitch: " << pitch << std::endl;
 //      std::cout <<"yaw: " << yaw << std::endl;
 
-//      if((m_it->fromId == -1) && (m_it->toId == 1))
-//      {
-//          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/world_check"));
-//      }
+      if((m_it->fromId == -1) && (m_it->toId == 0))
+      {
+          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/beta_marker"));
+      }
 
-//  }
+      if((m_it->fromId == -1) && (m_it->toId == 1))
+      {
+          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/kinect", "/target_marker"));
+      }
+
+      if((m_it->fromId == 0) && (m_it->toId == 1))
+      {
+          transform_broadcaster.sendTransform(tf::StampedTransform(m_it->measurement, now, "/ardrone_front_cam", "/target_marker_drone"));
+      }
+
+  }
 
   // call navigation function
   std::vector<geometry_msgs::Twist> control;

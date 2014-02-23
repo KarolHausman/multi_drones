@@ -50,6 +50,8 @@ protected:
   tf::Transform world_to_cam;
   tf::Transform drone_to_marker;
   tf::Transform drone_to_front_cam;
+  tf::Transform world_to_cam_2d;
+  tf::Transform drone_to_front_cam_2d;
 
   // 2D navigation stuff
   ranav::TParam params;
@@ -57,6 +59,10 @@ protected:
   ranav::EKF *ekf;
   ranav::TargetTrackingController *ttc;
   std::vector<ranav::SensorModel*> sensorModels;
+
+  //transform broadcaster for 2d projections
+  tf::TransformBroadcaster transform_broadcaster;
+
 };
 
 #endif
