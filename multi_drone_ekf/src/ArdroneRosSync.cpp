@@ -45,12 +45,18 @@ navigation(navigation)
 
         iter->second.pub_control = nh.advertise<geometry_msgs::Twist>("/node" + ss.str() + "/cmd_vel", 1);
     }
+
+    publishCommands = false;
+    sub_joystick = nh.subscribe("/joy", 100, &ArdroneRosSync::joystickCB, this);
 }
 
 ArdroneRosSync::~ArdroneRosSync() {
 
 }
 
+void ArdroneRosSync::joystickCB(const sensor_msgs::JoyConstPtr& joy_msg) {
+  publishCommands = joy_msg->buttons.at(8);
+}
 
 
 void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ardroneId)

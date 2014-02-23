@@ -9,6 +9,7 @@
 #include "multi_drone_ekf/Navdata.h"
 #include "multi_drone_ekf/Tag.h"
 #include "multi_drone_ekf/Tags.h"
+#include <sensor_msgs/Joy.h>
 
 class MultiAgent3dNavigation;
 
@@ -22,6 +23,8 @@ public:
   void tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ardroneId);
   //! Handles all incoming odometry data and stores them for the given ardroneId
   void navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, int ardroneId);
+  //! handles joystick buttons
+  void joystickCB(const sensor_msgs::JoyConstPtr& joy_msg);
 
   //! checks whether the collected data is complete to run a cycle of the navigation algorithm. Send the control command(s)
   void checkCycle();
@@ -49,6 +52,8 @@ protected:
   std::vector<ros::Subscriber> sub_navs; //!< navdata subscriber
   tf::TransformBroadcaster transform_broadcaster;
   tf::Transform pose_around_y; //!< transform for the marker detection
+  ros::Subscriber sub_joystick;
+  bool publishCommands;
 
 
   MultiAgent3dNavigation *navigation;
