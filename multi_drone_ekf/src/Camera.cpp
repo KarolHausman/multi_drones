@@ -39,9 +39,9 @@ void Camera::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, uint marker) {
 
             if (counter_ > 100)
             {
-                trans_x_ += tag.xMetric;
-                trans_y_ += tag.yMetric;
-                trans_z_ += tag.zMetric;
+                trans_x_ += tag.xMetric * 0.75;// HACK: marker detection is scaled because of bad printouts
+                trans_y_ += tag.yMetric * 0.75;
+                trans_z_ += tag.zMetric * 0.75;
                 rot_z_ += -tag.yRot;
                 rot_y_ += -tag.xRot;
                 rot_x_ += tag.zRot;
