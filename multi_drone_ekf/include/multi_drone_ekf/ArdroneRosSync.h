@@ -56,6 +56,7 @@ protected:
   bool publishCommands;
 
 
+
   MultiAgent3dNavigation *navigation;
 };
 

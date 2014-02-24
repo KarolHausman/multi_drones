@@ -123,7 +123,7 @@ void ArdroneRosSync::navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, int 
 
     double x = nav_msg->vx / 1000;
     double y = nav_msg->vy / 1000;
-    double z = nav_msg->altd / 1000;
+    double z = (double)nav_msg->altd / 1000;
     double roll = nav_msg->rotX / (180.0 / M_PI);
     double pitch = nav_msg->rotY / (180.0 / M_PI);
     double yaw = nav_msg->rotZ / (180.0 / M_PI);
