@@ -8,20 +8,10 @@
 # RANAV_FOUND            true if RANAV was found
 
 find_path(RANAV include/ranav/ekf.h PATHS
-  $ENV{RANAV_HOME}
-  $ENV{HOME}/code/ranav
-  $ENV{HOME}/ranav
-  ${CMAKE_SOURCE_DIR}/../../ranav
+  ${CMAKE_SOURCE_DIR}/../target_tracking
   )
 
 if(RANAV)
-  # GSL
-  find_library(LIB_GSL gsl)
-  IF (LIB_GSL)
-    MESSAGE(STATUS "found library 'gsl': ${LIB_GSL}")
-  ELSE (LIB_GSL)
-    MESSAGE(FATAL_ERROR "cannot find library 'gsl' - this will not work ...")
-  ENDIF (LIB_GSL)
   # NLopt
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${RANAV}/src)
   find_package(NLopt REQUIRED)
