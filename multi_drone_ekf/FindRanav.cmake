@@ -26,7 +26,7 @@ if(RANAV)
   message(STATUS "Found RANAV at ${RANAV}")
   set(RANAV_INCLUDE_DIR ${RANAV}/include ${NLOPT_INCLUDE_DIR})
   set(RANAV_LIBRARY_DIR ${RANAV}/lib ${NLOPT_LIBRARY_DIR})
-  set(RANAV_LIBRARIES ranav_multi_rotor_control ranav_estimation ranav_utils gsl gslcblas ${NLOPT_LIBRARIES})
+  set(RANAV_LIBRARIES ranav_multi_rotor_control ranav_estimation ranav_utils ${NLOPT_LIBRARIES})
 endif(RANAV)
 
 include(FindPackageHandleStandardArgs)
