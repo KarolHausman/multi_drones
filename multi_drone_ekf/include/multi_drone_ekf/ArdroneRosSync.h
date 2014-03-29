@@ -7,8 +7,10 @@
 #include <geometry_msgs/Twist.h>
 #include <tf/transform_broadcaster.h>
 #include "multi_drone_ekf/Navdata.h"
-#include "multi_drone_ekf/Tag.h"
-#include "multi_drone_ekf/Tags.h"
+
+#include <ar_pose/ARMarkers.h>
+#include <ar_pose/ARMarker.h>
+
 #include <sensor_msgs/Joy.h>
 
 class MultiAgent3dNavigation;
@@ -20,7 +22,7 @@ public:
   ~ArdroneRosSync();
 
   //! Handles all incoming marker observations and stores them as measurements of the given ardroneId
-  void tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ardroneId);
+  void tagCB(const ar_pose::ARMarkers::ConstPtr& tag_msg, int ardroneId);
   //! Handles all incoming odometry data and stores them for the given ardroneId
   void navCB(const multi_drone_ekf::NavdataConstPtr& nav_msg, int ardroneId);
   //! handles joystick buttons

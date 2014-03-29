@@ -23,7 +23,7 @@ navigation(navigation)
     pose_around_y.setRotation(rot_around_y);
 
     { // subscribe to global camera
-      boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, globalId) );
+      boost::function<void (const ar_pose::ARMarkers::ConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, globalId) );
       std::stringstream ss;
       ss << globalId;
       std::string tag_topic = "/node" + ss.str() + "/tags";
@@ -33,7 +33,7 @@ navigation(navigation)
     std::map<int, Agent>::iterator iter;
     for (iter = agents.begin(); iter != agents.end(); ++iter)
     {
-        boost::function<void (const multi_drone_ekf::TagsConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, iter->second.ardroneId) );
+        boost::function<void (const ar_pose::ARMarkers::ConstPtr&)> tag_callback( boost::bind(&ArdroneRosSync::tagCB, this, _1, iter->second.ardroneId) );
         std::stringstream ss;
         ss << iter->second.ardroneId;
         std::string tag_topic = "/node" + ss.str() + "/tags";
@@ -60,37 +60,35 @@ void ArdroneRosSync::joystickCB(const sensor_msgs::JoyConstPtr& joy_msg) {
 }
 
 
-void ArdroneRosSync::tagCB(const multi_drone_ekf::TagsConstPtr& tag_msg, int ardroneId)
+void ArdroneRosSync::tagCB(const ar_pose::ARMarkers::ConstPtr& tag_msg, int ardroneId)
 {
-    int tag_cnt = tag_msg->tag_count;
+    int tag_cnt = tag_msg->markers.size();
 
     if (tag_cnt == 0)
         return;
 
     for (int i = 0; i < tag_cnt; ++i) {
-        ROS_DEBUG("Found tag  %i (cf: %.3f) for ID = %i", tag_msg->tags[i].id, tag_msg->tags[i].cf, ardroneId);
+        ROS_DEBUG("Found tag  %i (cf: %i) for ID = %i", tag_msg->markers[i].id, tag_msg->markers[i].confidence, ardroneId);
 
-        multi_drone_ekf::Tag tag = tag_msg->tags[i];
+        ar_pose::ARMarker tag = tag_msg->markers[i];
 
         // detection is too unsure
-        if (tag.cf < 0.5)
+        if (tag.confidence < 0.5)
             continue;
 
-        double trans_x_ = tag.xMetric /** 0.75*/;// HACK: marker detection is scaled because of bad printouts
-        double trans_y_ = tag.yMetric /** 0.75*/;
-        double trans_z_ = tag.zMetric /** 0.75*/;
-        double rot_z_ = -tag.yRot;
-        double rot_y_ = -tag.xRot;
-        double rot_x_ = tag.zRot;
+        double trans_x_ = tag.pose.pose.position.x;
+        double trans_y_ = tag.pose.pose.position.y;
+        double trans_z_ = tag.pose.pose.position.z;
+
 
         btVector3 translation(trans_x_,trans_y_,trans_z_);
-        btQuaternion rotation;
-        rotation.setEulerZYX(rot_z_, rot_y_,rot_x_);
+        btQuaternion rotation(tag.pose.pose.orientation.x, tag.pose.pose.orientation.y, tag.pose.pose.orientation.z, tag.pose.pose.orientation.w);
+//        rotation.setEulerZYX(rot_z_, rot_y_,rot_x_);
 
         tf::Transform tag_pose;
         tag_pose.setOrigin(translation);
         tag_pose.setRotation(rotation);
-        tag_pose = tag_pose*pose_around_y;
+//        tag_pose = tag_pose*pose_around_y;
 
         if (ardroneId == globalId) {
           globalMeasurements.push_back(std::make_pair(tag.id, tag_pose));

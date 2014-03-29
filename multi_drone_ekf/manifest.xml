@@ -13,7 +13,8 @@
   <depend package="roscpp"/>
   <depend package="tf"/>
   <depend package="visualization_msgs"/>
-  <depend package="ar_recog"/>
+  <depend package="ar_pose"/>
+
   <depend package="joy" />
 
   <depend package="common_rosdeps" />
