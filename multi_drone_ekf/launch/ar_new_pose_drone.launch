@@ -1,0 +1,17 @@
+<launch>
+
+  <include file="$(find openni_launch)/launch/openni.launch"/>
+  <node name="ar_pose" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
+
+    <remap from="/camera/camera_info" to="/node1/camera_info" />
+    <remap from="/camera/image_raw" to="/node1/image_raw" />
+
+    <remap from="/ar_marker_pose" to="/node1/tags"/>
+
+    <param name="marker_pattern_list" type="string" value="$(find ar_pose)/data/object_4x4"/>
+    <param name="threshold" type="int" value="100"/>
+    <param name="publish_visual_markers" type="bool" value="false"/>
+    
+
+  </node>
+</launch>

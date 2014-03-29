@@ -4,6 +4,7 @@
   <node name="ardrone_driver" pkg="ardrone_autonomy" type="ardrone_driver" output="screen">
     <remap from="/ardrone/navdata" to="node1/navdata" />    
     <remap from="/ardrone/image_raw" to="node1/image_raw" /> 
+    <remap from="/ardrone/camera_info" to="node1/camera_info" /> <!--TODO: check the cam info topic -->
   </node>   
 
 <!-- joy_node -->
