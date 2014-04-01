@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
   ros::init(argc, argv, "multi_drone_control");
 
-  Camera camera(12);
+  Camera camera(0);
   ros::NodeHandle nh_;
   ros::Rate r(60);
   while (nh_.ok() && !camera.pose_set_) {
