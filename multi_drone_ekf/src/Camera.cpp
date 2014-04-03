@@ -67,7 +67,7 @@ Camera::Camera(uint marker_nr) {
     counter_ = 0;
     avg_number_ = 30;
     boost::function<void (const ar_pose::ARMarkers::ConstPtr&)> tag_callback( boost::bind(&Camera::tagCB, this, _1, marker_nr) );
-    sub_tags_ = nh_.subscribe("node100/tags", 100,  tag_callback);
+    sub_tags_ = nh_.subscribe("node0/tags", 100,  tag_callback);
 
     btVector3 trans_around_y(0,0,0);
 

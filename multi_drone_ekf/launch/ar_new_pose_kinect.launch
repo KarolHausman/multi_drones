@@ -6,7 +6,7 @@
     <remap from="/camera/camera_info" to="/camera/rgb/camera_info" />
     <remap from="/camera/image_raw" to="/camera/rgb/image_color" />
 
-    <remap from="/ar_pose_marker" to="/node100/tags"/>
+    <remap from="/ar_pose_marker" to="/node0/tags"/>
 
     <param name="marker_pattern_list" type="string" value="$(find multi_drone_ekf)/config/object_4x4"/>
     <param name="threshold" type="int" value="100"/>

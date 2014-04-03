@@ -12,8 +12,8 @@ navigation(navigation)
     agent.markerId = 1; // TODO: parameter
     agent.ardroneId = 1; // TODO: parameter
     agents[agent.ardroneId] = agent;
-    globalId = 100; // TODO: parameter
-    targetMarkerId = 9; // TODO: parameter
+    globalId = 0; // TODO: parameter
+    targetMarkerId = 3; // TODO: parameter
 
     //transform for the tagCB
     btVector3 trans_around_y(0,0,0);
@@ -94,7 +94,7 @@ void ArdroneRosSync::tagCB(const ar_pose::ARMarkers::ConstPtr& tag_msg, int ardr
           globalMeasurements.push_back(std::make_pair(tag.id, tag_pose));
 
           if (MultiAgent3dNavigation::broadcast_3d_measurements) {
-            if (tag.id == 12) {
+            if (tag.id == 0) {
               transform_broadcaster.sendTransform(tf::StampedTransform(tag_pose, ros::Time::now(), "/kinect", "/world_marker"));
             }
           }

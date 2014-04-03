@@ -1,7 +1,8 @@
 <launch>
 
-  <include file="$(find openni_launch)/launch/openni.launch"/>
-  <node name="ar_pose" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
+  <node name="ar_pose1" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
+
+
 
     <remap from="/camera/camera_info" to="/node1/camera_info" />
     <remap from="/camera/image_raw" to="/node1/image_raw" />
